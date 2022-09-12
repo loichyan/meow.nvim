@@ -4,6 +4,7 @@ local sys = require("spark.sys")
 local log = require("spark.log")
 local spec_utils = require("spark.spec")
 local shared = require("spark.shared")
+local sequence = require("spark.sequence")
 local State = shared.SpecState
 local CONFIG = shared.CONFIG
 local PLUGINS = shared.PLUGINS
@@ -43,6 +44,7 @@ end
 function M.setup(config)
   utils.deep_merge(true, CONFIG, config or {})
   local installed = local_plugins()
+  local plugins = {}
   CONFIG[1](function(spec)
     -- Validate specification.
     spec = spec_utils.validate(spec)
@@ -63,17 +65,30 @@ function M.setup(config)
       spec._state = State.Move
     elseif is_start then
       spec._state = State.Loaded
-    elseif not spec.start and not spec.disable then
+    elseif not spec.disable then
       -- Load from opt
       spec._state = State.Load
     end
 
-    table.insert(PLUGINS, spec)
+    table.insert(plugins, spec)
   end)
 
   -- Insert unused plugins to be removed.
   for name, opt in pairs(installed) do
-    table.insert(PLUGINS, { name, opt = opt, _state = State.Remove })
+    table.insert(plugins, { name, opt = opt, _state = State.Remove })
+  end
+
+  -- Resolve load sequence.
+  local resolved, msg = sequence.resolve(plugins)
+  if resolved == nil then
+    ---@diagnostic disable-next-line: param-type-mismatch
+    log.error(msg)
+    return
+  end
+
+  -- Insert all plugins.
+  for _, v in ipairs(resolved) do
+    table.insert(PLUGINS, v)
   end
 end
 

@@ -48,6 +48,10 @@ M.DEFAULT_SPEC = {
   start = false,
   ---@type boolean
   disable = false,
+  ---@type number
+  priority = 0,
+  ---@type string[]
+  after = {},
   ---@type Spark.Spec.State|nil
   _state = nil,
 }
