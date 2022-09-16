@@ -1,89 +1,73 @@
-local M = {}
-local utils = require("spark.utils")
+--[[ Generated with https://github.com/TypeScriptToLua/TypeScriptToLua ]]
+local ____exports = {}
+local uv
 local log = require("spark.log")
-local uv = vim.loop
-
----@param path string
----@return fun():string,string
-function M.scandir(path)
-  local fd, err = uv.fs_scandir(path)
-  if fd == nil then
-    log.error(err)
-    return function() end
-  end
-  return function()
-    while true do
-      local name, type = uv.fs_scandir_next(fd)
-      if name == nil then
-        if type ~= nil then
-          log.error(type)
+local ____utils = require("spark.utils")
+local join_path = ____utils.join_path
+function ____exports.scandir(path)
+    local fs, err = uv.fs_scandir(path)
+    if not fs then
+        log.error(err)
+        return function()
         end
-        return
-      end
-      return name, type
     end
-  end
-end
-
----@param path string
----@return boolean
-function M.remove(path)
-  local stat, err = uv.fs_lstat(path)
-  if stat == nil then
-    log.error(err)
-    return false
-  end
-  if stat.type == "directory" then
-    return M.remove_dir(path)
-  else
-    return M.remove_file(path)
-  end
-end
-
----@param path string
----@return boolean
-function M.remove_file(path)
-  local success, msg = uv.fs_unlink(path)
-  if not success then
-    log.error(msg)
-    return false
-  end
-  return true
-end
-
----@param path string
----@return boolean
-function M.remove_dir(path)
-  for name, type in M.scandir(path) do
-    local new_path = utils.join_paths(path, name)
-    if type == "directory" then
-      if not M.remove_dir(new_path) then
-        return false
-      end
-    else
-      if not M.remove_file(new_path) then
-        return false
-      end
+    local function iter(fs)
+        local name, ____type = uv.fs_scandir_next(fs)
+        if not name then
+            if ____type ~= nil then
+                log.error(____type)
+            end
+            return
+        end
+        return name, ____type
     end
-  end
-  local success, msg = uv.fs_rmdir(path)
-  if not success then
-    log.error(msg)
-    return false
-  end
-  return true
+    return iter, fs
 end
-
----@param from string
----@param to string
----@return boolean
-function M.rename(from, to)
-  local success, msg = uv.fs_rename(from, to)
-  if not success then
-    log.error(msg)
-    return false
-  end
-  return true
+function ____exports.remove_dir(path)
+    for name, ____type in ____exports.scandir(path) do
+        if ____type == "directory" then
+            if not ____exports.remove_dir(join_path(path, name)) then
+                return false
+            end
+        else
+            if not ____exports.remove_file(join_path(path, name)) then
+                return false
+            end
+        end
+    end
+    local ok, err = uv.fs_rmdir(path)
+    if not ok then
+        log.error(err)
+        return false
+    end
+    return true
 end
-
-return M
+function ____exports.remove_file(path)
+    local ok, err = uv.fs_unlink(path)
+    if not ok then
+        log.error(err)
+        return false
+    end
+    return true
+end
+uv = vim.loop
+function ____exports.remove(path)
+    local stat, err = uv.fs_lstat(path)
+    if not stat then
+        log.error(err)
+        return false
+    end
+    if stat.type == "directory" then
+        return ____exports.remove_dir(path)
+    end
+    return ____exports.remove_file(path)
+end
+function ____exports.rename(path, newpath)
+    local ok, err = uv.fs_rename(path, newpath)
+    if not ok then
+        log.error(err)
+        return false
+    end
+    return true
+end
+return ____exports

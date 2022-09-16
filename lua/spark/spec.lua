@@ -1,31 +1,29 @@
-local M = {}
-local shared = require("spark.shared")
-local utils = require("spark.utils")
-local DEFAULT = shared.DEFAULT_SPEC
-
----@param spec Spark.Spec
----@return string|Spark.Spec
-function M.validate(spec)
-  local orig = spec
-  -- Merge with default values.
-  spec = utils.deep_merge(false, {}, spec, DEFAULT)
-
-  local name = spec[1]
-  if name == "" then
-    return string.format(
-      "plugin name must be specified for %s",
-      vim.inspect(orig)
-    )
-  end
-  local prefix = string.format("(%s) ", name)
-  --TODO: validate path
-  if spec.from ~= nil then
-    spec.from = "https://github.com/" .. spec.from
-  end
-  if spec.start and spec.disable then
-    return prefix .. "a start plugin must be enabled"
-  end
-  return spec
+--[[ Generated with https://github.com/TypeScriptToLua/TypeScriptToLua ]]
+local ____exports = {}
+local ____shared = require("spark.shared")
+local DEFAULT_SPEC = ____shared.DEFAULT_SPEC
+local ____utils = require("spark.utils")
+local deep_merge = ____utils.deep_merge
+function ____exports.new_spec(spec)
+    return deep_merge(false, {}, spec, DEFAULT_SPEC)
 end
-
-return M
+function ____exports.validate(orig)
+    local spec2 = ____exports.new_spec(orig)
+    local name = orig[1]
+    if name == "" then
+        return nil, string.format(
+            "plugin name must be specified for '%s'",
+            vim.inspect(orig)
+        )
+    end
+    if spec2.from == "" then
+        return nil, string.format("'from' is missed in '%s'", name)
+    else
+        spec2.from = "https://github.com/" .. spec2.from
+    end
+    if spec2.start and spec2.disable then
+        return nil, string.format("start plugin '%s' cannot be disabled", name)
+    end
+    return spec2, nil
+end
+return ____exports
