@@ -1,5 +1,4 @@
-export declare type LogLevel = vim.log.levels;
-export declare const LogLevel: typeof vim.log.levels;
+export declare type LogLevel = "DEBUG" | "INFO" | "WARN" | "ERROR";
 export declare type SpecState = "NONE" | "MOVE" | "CLONE" | "REMOVE" | "LOAD" | "LOADED";
 export interface Spec {
     [1]: string;

@@ -2,7 +2,6 @@
 local ____exports = {}
 local ____utils = require("spark.utils")
 local join_path = ____utils.join_path
-____exports.LogLevel = vim.log.levels
 ____exports.DEFAULT_SPEC = {
     [1] = "",
     from = "",
@@ -22,7 +21,7 @@ ____exports.CONFIG = {
         vim.fn.stdpath("data"),
         "site/pack/spark"
     ),
-    log = {level = ____exports.LogLevel.WARN},
+    log = {level = "WARN"},
     after_load = function()
     end
 }

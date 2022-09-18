@@ -1,7 +1,6 @@
 import { join_path } from "./utils";
 
-export type LogLevel = vim.log.levels;
-export const LogLevel = vim.log.levels;
+export type LogLevel = "DEBUG" | "INFO" | "WARN" | "ERROR";
 
 export type SpecState =
   | "NONE"
@@ -48,7 +47,7 @@ export const CONFIG: Config = {
   [1]() {},
   root: join_path(vim.fn.stdpath("data"), "site/pack/spark"),
   log: {
-    level: LogLevel.WARN,
+    level: "WARN",
   },
   after_load() {},
 };
