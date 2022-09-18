@@ -2,7 +2,12 @@
   "name": "spark.nvim",
   "version": "0.0.0",
   "license": "MIT OR Apache-2.0",
-  "main": "src/spark.ts",
+  "main": "lua/spark",
+  "types": "lua/spark",
+  "files": [
+    "lua/**/*",
+    "src/global.d.ts"
+  ],
   "scripts": {
     "build": "tstl",
     "dev": "tstl --watch",
