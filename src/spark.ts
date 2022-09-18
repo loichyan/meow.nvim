@@ -120,12 +120,14 @@ export function install(this: void) {
           spec.__state = "LOAD";
           post_update(spec);
         }
+        break;
       }
       case "MOVE": {
         const name = spec[1];
         log.debug("move %s", name);
         sys.rename(plug_path(!spec.start, name), spec.__path);
         spec.__state = "LOAD";
+        break;
       }
     }
   }

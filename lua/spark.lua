@@ -121,6 +121,7 @@ function ____exports.install()
                         spec.__state = "LOAD"
                         post_update(spec)
                     end
+                    break
                 end
             end
             ____cond24 = ____cond24 or ____switch24 == "MOVE"
@@ -133,8 +134,8 @@ function ____exports.install()
                         spec.__path
                     )
                     spec.__state = "LOAD"
+                    break
                 end
-                break
             end
         until true
     end
