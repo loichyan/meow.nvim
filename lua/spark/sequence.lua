@@ -27,7 +27,7 @@ function ____exports.resolve_after(specs)
             local state, err = visit(ref_node[1])
             if not state then
                 return nil, err
-            elseif state ~= "LOAD" and state ~= "LOADED" then
+            elseif state ~= "LOAD" and state ~= "AFTER_LOAD" and state ~= "LOADED" then
                 to_load = false
             end
         end
@@ -44,9 +44,13 @@ function ____exports.resolve_after(specs)
             return nil, err
         end
     end
-    return specs, nil
+    return resolved, nil
 end
 function ____exports.resolve(specs)
+    table.sort(
+        specs,
+        function(a, b) return a[1] < b[1] end
+    )
     specs = merge_sort(
         specs,
         function(a, b) return a.priority - b.priority end

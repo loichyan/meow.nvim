@@ -2,7 +2,7 @@ import { DEFAULT_SPEC, Spec } from "./shared";
 import { deep_merge } from "./utils";
 
 export function new_spec(this: void, spec: DeepParitial<Spec>): Spec {
-  return deep_merge(false, {}, spec, DEFAULT_SPEC);
+  return deep_merge(false, { __state: "NONE", __path: "" }, spec, DEFAULT_SPEC);
 }
 
 export function validate(
@@ -10,17 +10,20 @@ export function validate(
   orig: DeepParitial<Spec>
 ): LuaMultiReturn<[Spec, undefined] | [undefined, string]> {
   const spec2 = new_spec(orig);
-  const name = orig[1];
+  const name = spec2[1];
   if (name == "") {
     return $multi(
       undefined,
       string.format("plugin name must be specified for '%s'", vim.inspect(orig))
     );
-  }
-  if (spec2.from == "") {
-    return $multi(undefined, string.format("'from' is missed in '%s'", name));
+  } else if (string.sub(name, 1, 1) == "$") {
+    spec2.__state = "AFTER_LOAD";
   } else {
-    spec2.from = "https://github.com/" + spec2.from;
+    if (spec2.from == "") {
+      return $multi(undefined, string.format("'from' is missed in '%s'", name));
+    } else {
+      spec2.from = "https://github.com/" + spec2.from;
+    }
   }
   if (spec2.start && spec2.disable) {
     return $multi(

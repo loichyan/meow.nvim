@@ -56,7 +56,11 @@ export function resolve_after(
       const [state, err] = visit(ref_node[1]);
       if (!state) {
         return $multi(undefined, err);
-      } else if (state != "LOAD" && state != "LOADED") {
+      } else if (
+        state != "LOAD" &&
+        state != "AFTER_LOAD" &&
+        state != "LOADED"
+      ) {
         to_load = false;
       }
     }
@@ -75,13 +79,14 @@ export function resolve_after(
     }
   }
 
-  return $multi(specs, undefined);
+  return $multi(resolved, undefined);
 }
 
 export function resolve(
   this: void,
   specs: Spec[]
 ): Lua.MultiReturn<[Spec[], undefined] | [undefined, string]> {
+  table.sort(specs, (a, b) => a[1] < b[1]);
   specs = merge_sort(specs, (a, b) => a.priority - b.priority);
   return resolve_after(specs);
 }

@@ -32,21 +32,6 @@ local function local_plugin()
     end
     return plugins
 end
-local function load_plugin(spec)
-    local name = spec[1]
-    log.debug("load %s", name)
-    vim.cmd("packadd " .. name)
-    spec.__state = "LOADED"
-    CONFIG.after_load(spec)
-end
-local function post_update(spec)
-    local run = spec.run
-    if type(run) == "function" then
-        run(nil)
-    else
-        Job.new({cmd = run, cwd = spec.__path}):run()
-    end
-end
 function ____exports.setup(config)
     deep_merge(true, CONFIG, config or ({}))
     local installed = local_plugin()
@@ -58,18 +43,20 @@ function ____exports.setup(config)
             return
         end
         local name = spec[1]
-        local is_start = installed[name]
-        installed[name] = nil
-        if is_start == nil then
-            spec.__state = "CLONE"
-        elseif is_start then
-            spec.__state = "LOADED"
-        elseif not spec.disable then
-            spec.__state = "LOAD"
-        elseif is_start ~= spec.start then
-            spec.__state = "MOVE"
+        if spec.__state == "NONE" then
+            local is_start = installed[name]
+            installed[name] = nil
+            if is_start == nil then
+                spec.__state = "CLONE"
+            elseif is_start then
+                spec.__state = "AFTER_LOAD"
+            elseif not spec.disable then
+                spec.__state = "LOAD"
+            elseif is_start ~= spec.start then
+                spec.__state = "MOVE"
+            end
+            spec.__path = plug_path(spec.start, name)
         end
-        spec.__path = plug_path(spec.start, name)
         table.insert(plugins, spec)
     end)
     for name, start in pairs(installed) do
@@ -90,60 +77,63 @@ end
 function ____exports.plugins()
     return PLUGINS
 end
+local function post_update(spec)
+    local run = spec.run
+    if type(run) == "function" then
+        run(nil)
+    else
+        Job.new({cmd = run, cwd = spec.__path}):run()
+    end
+end
 function ____exports.install()
     for _, spec in ipairs(PLUGINS) do
-        repeat
-            local ____switch24 = spec.__state
-            local ____cond24 = ____switch24 == "CLONE"
-            if ____cond24 then
-                do
-                    local name = spec[1]
-                    log.debug("clone %s", name)
-                    local code, signal, out, err = Job.new({cmd = {
-                        "git",
-                        "clone",
-                        spec.from,
-                        spec.__path,
-                        "--depth",
-                        "1"
-                    }}):run()
-                    if code == nil then
-                        return
-                    end
-                    log.debug(
-                        "code %d, signal: %d, err: %s, out: %s",
-                        code,
-                        signal,
-                        out,
-                        err
-                    )
-                    if code == 0 then
-                        spec.__state = "LOAD"
-                        post_update(spec)
-                    end
-                    break
-                end
+        local name = spec[1]
+        if spec.__state == "CLONE" then
+            log.debug("clone %s", name)
+            local code, signal, out, err = Job.new({cmd = {
+                "git",
+                "clone",
+                spec.from,
+                spec.__path,
+                "--depth",
+                "1"
+            }}):run()
+            if code == nil then
+                return
             end
-            ____cond24 = ____cond24 or ____switch24 == "MOVE"
-            if ____cond24 then
-                do
-                    local name = spec[1]
-                    log.debug("move %s", name)
-                    sys.rename(
-                        plug_path(not spec.start, name),
-                        spec.__path
-                    )
-                    spec.__state = "LOAD"
-                    break
-                end
+            log.debug(
+                "code %d, signal: %d, err: %s, out: %s",
+                code,
+                signal,
+                out,
+                err
+            )
+            if code == 0 then
+                spec.__state = "LOAD"
+                post_update(spec)
             end
-        until true
+        elseif spec.__state == "MOVE" then
+            log.debug("move %s", name)
+            sys.rename(
+                plug_path(not spec.start, name),
+                spec.__path
+            )
+            spec.__state = "LOAD"
+            break
+        end
     end
 end
 function ____exports.load()
     for _, spec in ipairs(PLUGINS) do
+        local name = spec[1]
         if spec.__state == "LOAD" then
-            load_plugin(spec)
+            log.debug("load %s", name)
+            vim.cmd("packadd " .. name)
+            spec.__state = "AFTER_LOAD"
+        end
+        if spec.__state == "AFTER_LOAD" then
+            log.debug("after load %s", name)
+            CONFIG.after_load(spec)
         end
     end
 end

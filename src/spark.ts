@@ -25,23 +25,6 @@ function local_plugin(this: void): LuaMap<string, boolean> {
   return plugins;
 }
 
-function load_plugin(this: void, spec: Spec) {
-  const name = spec[1];
-  log.debug("load %s", name);
-  vim.cmd("packadd " + name);
-  spec.__state = "LOADED";
-  CONFIG.after_load(spec);
-}
-
-function post_update(this: void, spec: Spec) {
-  const run = spec.run;
-  if (type(run) == "function") {
-    (run as any)();
-  } else {
-    Job.new({ cmd: run as any, cwd: spec.__path }).run();
-  }
-}
-
 export function setup(this: void, config?: DeepParitial<Config>) {
   deep_merge(true, CONFIG, config ?? {});
   const installed = local_plugin();
@@ -52,21 +35,23 @@ export function setup(this: void, config?: DeepParitial<Config>) {
       log.error(err);
       return;
     }
-    // Figure out the initial state.
     const name = spec[1];
-    const is_start = installed.get(name);
-    installed.delete(name);
-    if (is_start == undefined) {
-      spec.__state = "CLONE";
-    } else if (is_start) {
-      spec.__state = "LOADED";
-    } else if (!spec.disable) {
-      spec.__state = "LOAD";
-    } else if (is_start != spec.start) {
-      spec.__state = "MOVE";
+    if (spec.__state == "NONE") {
+      // Figure out the initial state.
+      const is_start = installed.get(name);
+      installed.delete(name);
+      if (is_start == undefined) {
+        spec.__state = "CLONE";
+      } else if (is_start) {
+        spec.__state = "AFTER_LOAD";
+      } else if (!spec.disable) {
+        spec.__state = "LOAD";
+      } else if (is_start != spec.start) {
+        spec.__state = "MOVE";
+      }
+      // Cache plugin path.
+      spec.__path = plug_path(spec.start, name);
     }
-    // Cache plugin path.
-    spec.__path = plug_path(spec.start, name);
 
     table.insert(plugins, spec);
   });
@@ -97,46 +82,57 @@ export function plugins(this: void): Spec[] {
   return PLUGINS;
 }
 
+function post_update(this: void, spec: Spec) {
+  const run = spec.run;
+  if (type(run) == "function") {
+    (run as any)();
+  } else {
+    Job.new({ cmd: run as any, cwd: spec.__path }).run();
+  }
+}
+
 export function install(this: void) {
   for (const [_, spec] of ipairs(PLUGINS)) {
-    switch (spec.__state) {
-      case "CLONE": {
-        const name = spec[1];
-        log.debug("clone %s", name);
-        const [code, signal, out, err] = Job.new({
-          cmd: ["git", "clone", spec.from, spec.__path, "--depth", "1"],
-        }).run();
-        if (code == undefined) {
-          return;
-        }
-        log.debug(
-          "code %d, signal: %d, err: %s, out: %s",
-          code,
-          signal,
-          out,
-          err
-        );
-        if (code == 0) {
-          spec.__state = "LOAD";
-          post_update(spec);
-        }
-        break;
+    const name = spec[1];
+    if (spec.__state == "CLONE") {
+      log.debug("clone %s", name);
+      const [code, signal, out, err] = Job.new({
+        cmd: ["git", "clone", spec.from, spec.__path, "--depth", "1"],
+      }).run();
+      if (code == undefined) {
+        return;
       }
-      case "MOVE": {
-        const name = spec[1];
-        log.debug("move %s", name);
-        sys.rename(plug_path(!spec.start, name), spec.__path);
+      log.debug(
+        "code %d, signal: %d, err: %s, out: %s",
+        code,
+        signal,
+        out,
+        err
+      );
+      if (code == 0) {
         spec.__state = "LOAD";
-        break;
+        post_update(spec);
       }
+    } else if (spec.__state == "MOVE") {
+      log.debug("move %s", name);
+      sys.rename(plug_path(!spec.start, name), spec.__path);
+      spec.__state = "LOAD";
+      break;
     }
   }
 }
 
 export function load(this: void) {
   for (const [_, spec] of ipairs(PLUGINS)) {
+    const name = spec[1];
     if (spec.__state == "LOAD") {
-      load_plugin(spec);
+      log.debug("load %s", name);
+      vim.cmd("packadd " + name);
+      spec.__state = "AFTER_LOAD";
+    }
+    if (spec.__state == "AFTER_LOAD") {
+      log.debug("after load %s", name);
+      CONFIG.after_load(spec);
     }
   }
 }

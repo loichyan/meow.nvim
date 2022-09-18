@@ -8,6 +8,7 @@ export type SpecState =
   | "CLONE"
   | "REMOVE"
   | "LOAD"
+  | "AFTER_LOAD"
   | "LOADED";
 
 export interface Spec {
