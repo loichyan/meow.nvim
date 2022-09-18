@@ -2,8 +2,21 @@
   "name": "spark.nvim",
   "version": "0.0.0",
   "license": "MIT OR Apache-2.0",
-  "main": "lua/spark",
+  "main": "lua/spark.d.ts",
   "types": "lua/spark",
+  "exports": {
+    ".": {
+      "types": "./lua/spark.d.ts",
+      "default": "./lua/spark"
+    },
+    "./*": {
+      "types": "./lua/spark/*.d.ts",
+      "default": "./lua/spark/*"
+    },
+    "./types": {
+      "types": "./src/global.d.ts"
+    }
+  },
   "files": [
     "lua/**/*",
     "src/global.d.ts"

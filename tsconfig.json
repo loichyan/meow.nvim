@@ -4,12 +4,12 @@
     "target": "esnext",
     "lib": ["esnext"],
     "declaration": true,
-    "moduleResolution": "node",
+    "moduleResolution": "nodenext",
     "outDir": "lua",
     "strict": true
   },
   "tstl": {
     "buildMode": "library"
   },
-  "include": ["src/**/*"]
+  "include": ["src/*"]
 }
