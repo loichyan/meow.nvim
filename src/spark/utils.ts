@@ -2,34 +2,6 @@ export function join_path(this: void, ...paths: string[]): string {
   return table.concat(paths, "/");
 }
 
-type NonOptionalKeys<T> = {
-  [K in keyof T]-?: never;
-};
-
-type DoMergeVal<V1, V2, Force> = Force extends true
-  ? V2
-  : V1 extends undefined
-  ? V2
-  : V1;
-
-type MergeVal<V1, V2, Force> = true extends IsTbl<V1>
-  ? true extends IsTbl<V2>
-    ? Merge2T<V1, V2, Force>
-    : DoMergeVal<V1, V2, Force>
-  : DoMergeVal<V1, V2, Force>;
-
-type Merge2T<T1, T2, Force> = {
-  [K in keyof NonOptionalKeys<T1>]: K extends keyof T2
-    ? MergeVal<T1[K], T2[K], Force>
-    : T1[K];
-} & {
-  [K in keyof NonOptionalKeys<T2> as K extends keyof T1 ? never : K]: T2[K];
-};
-
-type MergeTbls<Tbl1, Rest, Force> = Rest extends [infer Head, ...infer Tail]
-  ? MergeTbls<Merge2T<Tbl1, Head, Force>, Tail, Force>
-  : Tbl1;
-
 export function deep_merge<
   Force extends boolean,
   T1 extends Tbl,
