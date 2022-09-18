@@ -1,8 +1,19 @@
 /// <reference types="lua-types/jit" />
 
+declare type Tbl = { [k: number | string]: any };
+
+declare type IsTbl<T> = T extends any[]
+  ? never
+  : T extends Function
+  ? never
+  : T extends Tbl
+  ? T
+  : never;
 
 declare type DeepParitial<T> = {
-  [K in keyof T as K extends symbol ? never : K]?: DeepParitial<T[K]>;
+  [K in keyof T as K extends symbol ? never : K]?: T[K] extends IsTbl<T[K]>
+    ? DeepParitial<T[K]>
+    : T[K];
 } & {
   [K in keyof T as K extends symbol ? K : never]: T[K];
 };

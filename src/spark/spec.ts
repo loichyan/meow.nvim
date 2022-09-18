@@ -2,7 +2,7 @@ import { DEFAULT_SPEC, Spec } from "./shared";
 import { deep_merge } from "./utils";
 
 export function new_spec(this: void, spec: DeepParitial<Spec>): Spec {
-  return deep_merge(false, {} as any, spec as any, DEFAULT_SPEC as any) as any;
+  return deep_merge(false, {}, spec, DEFAULT_SPEC);
 }
 
 export function validate(
@@ -30,8 +30,3 @@ export function validate(
   }
   return $multi(spec2, undefined);
 }
-
-type A = {
-  [Lua.brand]: string;
-  a: { b: { c: string } };
-};

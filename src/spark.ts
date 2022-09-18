@@ -43,7 +43,7 @@ function post_update(this: void, spec: Spec) {
 }
 
 export function setup(this: void, config?: DeepParitial<Config>) {
-  deep_merge(true, CONFIG as any, (config ?? {}) as any);
+  deep_merge(true, CONFIG, config ?? {});
   const installed = local_plugin();
   const plugins: Spec[] = [];
   CONFIG[1]((orig) => {

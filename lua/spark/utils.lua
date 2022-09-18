@@ -4,9 +4,10 @@ function ____exports.join_path(...)
     local paths = {...}
     return table.concat(paths, "/")
 end
-function ____exports.deep_merge(force, tbl1, ...)
-    local tbls = {...}
-    for _, tbl2 in ipairs(tbls) do
+function ____exports.deep_merge(force, t1, ...)
+    local rest = {...}
+    local tbl1 = t1
+    for _, tbl2 in ipairs(rest) do
         for k, v2 in pairs(tbl2) do
             local v1 = tbl1[k]
             if type(v1) == "table" and type(v2) == "table" then
