@@ -2,20 +2,32 @@
 
 declare type Tbl = { [k: number | string]: any };
 
+declare type IsAny<T> = T extends {}
+  ? T & {} extends never
+    ? true
+    : never
+  : never;
+
+declare type IsAnyX<T> = T extends {}
+  ? T & {} extends never
+    ? T
+    : never
+  : never;
+
 declare type IsTbl<T> = T extends any[]
   ? never
   : T extends Function
   ? never
   : T extends Tbl
-  ? T
+  ? true
   : never;
 
 declare type DeepParitial<T> = {
-  [K in keyof T as K extends symbol ? never : K]?: T[K] extends IsTbl<T[K]>
+  [K in keyof T]?: true extends IsAny<T[K]>
+    ? T[K]
+    : true extends IsTbl<T[K]>
     ? DeepParitial<T[K]>
     : T[K];
-} & {
-  [K in keyof T as K extends symbol ? K : never]: T[K];
 };
 
 declare namespace Lua {

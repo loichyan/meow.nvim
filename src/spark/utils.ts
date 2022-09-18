@@ -12,8 +12,8 @@ type DoMergeVal<V1, V2, Force> = Force extends true
   ? V2
   : V1;
 
-type MergeVal<V1, V2, Force> = V1 extends IsTbl<V1>
-  ? V2 extends IsTbl<V2>
+type MergeVal<V1, V2, Force> = true extends IsTbl<V1>
+  ? true extends IsTbl<V2>
     ? Merge2T<V1, V2, Force>
     : DoMergeVal<V1, V2, Force>
   : DoMergeVal<V1, V2, Force>;

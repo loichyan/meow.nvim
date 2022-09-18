@@ -6,6 +6,7 @@
     "declaration": true,
     "moduleResolution": "nodenext",
     "outDir": "lua",
+    "skipDefaultLibCheck": true,
     "strict": true
   },
   "tstl": {
