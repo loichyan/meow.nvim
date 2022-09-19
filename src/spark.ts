@@ -31,7 +31,7 @@ export function setup(this: void, config?: DeepParitial<Config>) {
   const plugins: Spec[] = [];
   CONFIG[1]((orig) => {
     const [spec, err] = validate(orig);
-    if (!spec) {
+    if (spec == undefined) {
       log.error(err);
       return;
     }
@@ -68,7 +68,7 @@ export function setup(this: void, config?: DeepParitial<Config>) {
   }
   // Resolve load sequence.
   const [resolved, msg] = resolve(plugins);
-  if (!resolved) {
+  if (resolved == undefined) {
     log.error(msg);
     return;
   }

@@ -6,14 +6,14 @@ local ____utils = require("spark.utils")
 local join_path = ____utils.join_path
 function ____exports.scandir(path)
     local fs, err = uv.fs_scandir(path)
-    if not fs then
+    if fs == nil then
         log.error(err)
         return function()
         end
     end
     local function iter(fs)
         local name, ____type = uv.fs_scandir_next(fs)
-        if not name then
+        if name == nil then
             if ____type ~= nil then
                 log.error(____type)
             end
@@ -36,7 +36,7 @@ function ____exports.remove_dir(path)
         end
     end
     local ok, err = uv.fs_rmdir(path)
-    if not ok then
+    if ok == nil then
         log.error(err)
         return false
     end
@@ -44,7 +44,7 @@ function ____exports.remove_dir(path)
 end
 function ____exports.remove_file(path)
     local ok, err = uv.fs_unlink(path)
-    if not ok then
+    if ok == nil then
         log.error(err)
         return false
     end
@@ -53,7 +53,7 @@ end
 uv = vim.loop
 function ____exports.remove(path)
     local stat, err = uv.fs_lstat(path)
-    if not stat then
+    if stat == nil then
         log.error(err)
         return false
     end
@@ -64,7 +64,7 @@ function ____exports.remove(path)
 end
 function ____exports.rename(path, newpath)
     local ok, err = uv.fs_rename(path, newpath)
-    if not ok then
+    if ok == nil then
         log.error(err)
         return false
     end

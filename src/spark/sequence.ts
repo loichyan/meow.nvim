@@ -43,7 +43,7 @@ export function resolve_after(
     let to_load = true;
     for (const [_, ref_name] of ipairs(spec.after)) {
       const ref_node = nodes.get(ref_name);
-      if (!ref_node) {
+      if (ref_node == undefined) {
         return $multi(
           undefined,
           string.format(
@@ -54,7 +54,7 @@ export function resolve_after(
         );
       }
       const [state, err] = visit(ref_node[1]);
-      if (!state) {
+      if (state == undefined) {
         return $multi(undefined, err);
       } else if (
         state != "LOAD" &&
@@ -74,7 +74,7 @@ export function resolve_after(
 
   for (const [_, spec] of ipairs(specs)) {
     const [state, err] = visit(spec);
-    if (!state) {
+    if (state == undefined) {
       return $multi(undefined, err);
     }
   }

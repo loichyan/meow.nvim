@@ -35,7 +35,7 @@ function new_pipe(
   cb: Lua.MkFn<(data: string) => void>
 ): uv.pipe_t | undefined {
   const [pipe, err] = uv.new_pipe();
-  if (!pipe) {
+  if (pipe == undefined) {
     log.error(err);
     return;
   }
@@ -108,7 +108,7 @@ export const Job: JobConstructor = {
           },
         });
         this.wait(timeout);
-        if (!code || !signal) {
+        if (code == undefined || signal == undefined) {
           return $multi() as any;
         }
         return $multi(code, signal, stdout, stderr);

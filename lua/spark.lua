@@ -38,7 +38,7 @@ function ____exports.setup(config)
     local plugins = {}
     CONFIG[1](function(orig)
         local spec, err = validate(orig)
-        if not spec then
+        if spec == nil then
             log.error(err)
             return
         end
@@ -66,7 +66,7 @@ function ____exports.setup(config)
         )
     end
     local resolved, msg = resolve(plugins)
-    if not resolved then
+    if resolved == nil then
         log.error(msg)
         return
     end

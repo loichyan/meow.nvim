@@ -35,7 +35,9 @@ declare type NonOptionalKeys<T> = {
 };
 
 declare type DoMergeVal<V1, V2, Force> = Force extends true
-  ? V2
+  ? V2 extends undefined
+    ? V1
+    : V2
   : V1 extends undefined
   ? V2
   : V1;

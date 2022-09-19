@@ -4,7 +4,7 @@ local log = require("spark.log")
 local uv = vim.loop
 local function new_pipe(cb)
     local pipe, err = uv.new_pipe()
-    if not pipe then
+    if pipe == nil then
         log.error(err)
         return
     end
@@ -98,7 +98,7 @@ ____exports.Job = {new = function(opts)
                 end
             })
             self:wait(timeout)
-            if not code or not signal then
+            if code == nil or signal == nil then
                 return
             end
             return code, signal, stdout, stderr

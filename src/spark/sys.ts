@@ -7,13 +7,13 @@ export function scandir(
   path: string
 ): Lua.Iterable<Lua.MultiReturn<[string, uv.fs_stat_type]>, uv.fs_t> {
   const [fs, err] = uv.fs_scandir(path);
-  if (!fs) {
+  if (fs == undefined) {
     log.error(err);
     return (() => {}) as any;
   }
   function iter(this: void, fs: uv.fs_t) {
     const [name, type] = uv.fs_scandir_next(fs);
-    if (!name) {
+    if (name == undefined) {
       if (type != undefined) {
         log.error(type);
       }
@@ -26,7 +26,7 @@ export function scandir(
 
 export function remove(this: void, path: string): boolean {
   const [stat, err] = uv.fs_lstat(path);
-  if (!stat) {
+  if (stat == undefined) {
     log.error(err);
     return false;
   }
@@ -49,7 +49,7 @@ export function remove_dir(this: void, path: string): boolean {
     }
   }
   const [ok, err] = uv.fs_rmdir(path);
-  if (!ok) {
+  if (ok == undefined) {
     log.error(err!);
     return false;
   }
@@ -58,7 +58,7 @@ export function remove_dir(this: void, path: string): boolean {
 
 export function remove_file(this: void, path: string): boolean {
   const [ok, err] = uv.fs_unlink(path);
-  if (!ok) {
+  if (ok == undefined) {
     log.error(err!);
     return false;
   }
@@ -67,7 +67,7 @@ export function remove_file(this: void, path: string): boolean {
 
 export function rename(this: void, path: string, newpath: string): boolean {
   const [ok, err] = uv.fs_rename(path, newpath);
-  if (!ok) {
+  if (ok == undefined) {
     log.error(err!);
     return false;
   }

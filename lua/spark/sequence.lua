@@ -21,11 +21,11 @@ function ____exports.resolve_after(specs)
         local to_load = true
         for _, ref_name in ipairs(spec.after) do
             local ref_node = nodes[ref_name]
-            if not ref_node then
+            if ref_node == nil then
                 return nil, string.format("undefined 'after' reference '%s' in '%s'", ref_name, name)
             end
             local state, err = visit(ref_node[1])
-            if not state then
+            if state == nil then
                 return nil, err
             elseif state ~= "LOAD" and state ~= "AFTER_LOAD" and state ~= "LOADED" then
                 to_load = false
@@ -40,7 +40,7 @@ function ____exports.resolve_after(specs)
     end
     for _, spec in ipairs(specs) do
         local state, err = visit(spec)
-        if not state then
+        if state == nil then
             return nil, err
         end
     end
