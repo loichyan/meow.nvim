@@ -26,7 +26,7 @@ function local_plugin(this: void): LuaMap<string, boolean> {
 }
 
 export function setup(this: void, config?: DeepParitial<Config>) {
-  deep_merge(true, CONFIG, config ?? {});
+  deep_merge("force", CONFIG, config ?? {});
   const installed = local_plugin();
   const plugins: Spec[] = [];
   CONFIG[1]((orig) => {

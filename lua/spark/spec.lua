@@ -5,7 +5,7 @@ local DEFAULT_SPEC = ____shared.DEFAULT_SPEC
 local ____utils = require("spark.utils")
 local deep_merge = ____utils.deep_merge
 function ____exports.new_spec(spec)
-    return deep_merge(false, {__state = "NONE", __path = ""}, spec, DEFAULT_SPEC)
+    return deep_merge("keep", {__state = "NONE", __path = ""}, spec, DEFAULT_SPEC)
 end
 function ____exports.validate(orig)
     local spec2 = ____exports.new_spec(orig)

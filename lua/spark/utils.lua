@@ -4,15 +4,15 @@ function ____exports.join_path(...)
     local paths = {...}
     return table.concat(paths, "/")
 end
-function ____exports.deep_merge(force, t1, ...)
+function ____exports.deep_merge(behavior, t1, ...)
     local rest = {...}
     local tbl1 = t1
     for _, tbl2 in ipairs(rest) do
         for k, v2 in pairs(tbl2) do
             local v1 = tbl1[k]
             if type(v1) == "table" and type(v2) == "table" then
-                ____exports.deep_merge(force, v1, v2)
-            elseif force then
+                ____exports.deep_merge(behavior, v1, v2)
+            elseif behavior == "force" then
                 if v2 ~= nil then
                     tbl1[k] = v2
                 end

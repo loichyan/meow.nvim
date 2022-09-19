@@ -2,7 +2,12 @@ import { DEFAULT_SPEC, Spec } from "./shared";
 import { deep_merge } from "./utils";
 
 export function new_spec(this: void, spec: DeepParitial<Spec>): Spec {
-  return deep_merge(false, { __state: "NONE", __path: "" }, spec, DEFAULT_SPEC);
+  return deep_merge(
+    "keep",
+    { __state: "NONE", __path: "" },
+    spec,
+    DEFAULT_SPEC
+  );
 }
 
 export function validate(

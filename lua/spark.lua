@@ -33,7 +33,7 @@ local function local_plugin()
     return plugins
 end
 function ____exports.setup(config)
-    deep_merge(true, CONFIG, config or ({}))
+    deep_merge("force", CONFIG, config or ({}))
     local installed = local_plugin()
     local plugins = {}
     CONFIG[1](function(orig)

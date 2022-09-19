@@ -3,17 +3,22 @@ export function join_path(this: void, ...paths: string[]): string {
 }
 
 export function deep_merge<
-  Force extends boolean,
+  Behavior extends "force" | "keep",
   T1 extends Tbl,
   Rest extends Tbl[]
->(this: void, force: Force, t1: T1, ...rest: Rest): MergeTbls<T1, Rest, Force> {
+>(
+  this: void,
+  behavior: Behavior,
+  t1: T1,
+  ...rest: Rest
+): MergeTbls<T1, Rest, Behavior extends "force" ? true : false> {
   const tbl1 = t1 as any as LuaTable<string | number>;
   for (const [_, tbl2] of ipairs(rest as any as LuaTable<string | number>[])) {
     for (const [k, v2] of pairs(tbl2)) {
       const v1 = tbl1.get(k);
       if (type(v1) == "table" && type(v2) == "table") {
-        deep_merge(force, v1, v2);
-      } else if (force) {
+        deep_merge(behavior, v1, v2);
+      } else if (behavior == "force") {
         if (v2 != undefined) tbl1.set(k, v2);
       } else if (v1 == undefined) {
         tbl1.set(k, v2);
