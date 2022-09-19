@@ -34,19 +34,18 @@ declare type NonOptionalKeys<T> = {
   [K in keyof T]-?: never;
 };
 
-declare type DoMergeVal<V1, V2, Force> = Force extends true
+declare type MergeVal<V1, V2, Force, Rec> = [IsTbl<V1>, IsTbl<V2>] extends [
+  true,
+  true
+]
+  ? Merge2Tbl<V1, V2, Force, Rec>
+  : Force extends true
   ? V2 extends undefined
     ? V1
     : V2
   : V1 extends undefined
   ? V2
   : V1;
-
-declare type MergeVal<V1, V2, Force, Rec> = IsTbl<V1> extends true
-  ? IsTbl<V2> extends true
-    ? Merge2Tbl<V1, V2, Force, Rec>
-    : DoMergeVal<V1, V2, Force>
-  : DoMergeVal<V1, V2, Force>;
 
 declare type Merge2Tbl<T1, T2, Force, Rec> = {
   [K in keyof NonOptionalKeys<T1>]: K extends keyof T2
@@ -58,10 +57,12 @@ declare type Merge2Tbl<T1, T2, Force, Rec> = {
   [K in keyof NonOptionalKeys<T2> as K extends keyof T1 ? never : K]: T2[K];
 };
 
-declare type MergeTbls<Tbl1, Rest, Force = true, Rec = true> = Rest extends [
-  infer Head,
-  ...infer Tail
-]
+declare type MergeTbls<
+  Tbl1,
+  Rest,
+  Force extends boolean = true,
+  Rec extends boolean = true
+> = Rest extends [infer Head, ...infer Tail]
   ? MergeTbls<Merge2Tbl<Tbl1, Head, Force, Rec>, Tail, Force>
   : Tbl1;
 

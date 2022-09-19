@@ -13,9 +13,9 @@ export function deep_merge<
       const v1 = tbl1.get(k);
       if (type(v1) == "table" && type(v2) == "table") {
         deep_merge(force, v1, v2);
-      } else if (force && v2 != undefined) {
-        tbl1.set(k, v2);
-      } else if (v1 != undefined) {
+      } else if (force) {
+        if (v2 != undefined) tbl1.set(k, v2);
+      } else if (v1 == undefined) {
         tbl1.set(k, v2);
       }
     }

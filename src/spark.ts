@@ -57,14 +57,9 @@ export function setup(this: void, config?: DeepParitial<Config>) {
   });
   // Mark unused plugins to remove.
   for (const [name, start] of installed) {
-    table.insert(
-      plugins,
-      new_spec({
-        [1]: name,
-        start: start,
-        __state: "REMOVE",
-      })
-    );
+    const spec = new_spec({ [1]: name, start });
+    spec.__state = "REMOVE";
+    table.insert(plugins, spec);
   }
   // Resolve load sequence.
   const [resolved, msg] = resolve(plugins);

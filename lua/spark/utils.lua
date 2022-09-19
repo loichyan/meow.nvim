@@ -12,9 +12,11 @@ function ____exports.deep_merge(force, t1, ...)
             local v1 = tbl1[k]
             if type(v1) == "table" and type(v2) == "table" then
                 ____exports.deep_merge(force, v1, v2)
-            elseif force and v2 ~= nil then
-                tbl1[k] = v2
-            elseif v1 ~= nil then
+            elseif force then
+                if v2 ~= nil then
+                    tbl1[k] = v2
+                end
+            elseif v1 == nil then
                 tbl1[k] = v2
             end
         end

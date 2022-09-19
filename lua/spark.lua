@@ -60,10 +60,9 @@ function ____exports.setup(config)
         table.insert(plugins, spec)
     end)
     for name, start in pairs(installed) do
-        table.insert(
-            plugins,
-            new_spec({[1] = name, start = start, __state = "REMOVE"})
-        )
+        local spec = new_spec({[1] = name, start = start})
+        spec.__state = "REMOVE"
+        table.insert(plugins, spec)
     end
     local resolved, msg = resolve(plugins)
     if resolved == nil then
