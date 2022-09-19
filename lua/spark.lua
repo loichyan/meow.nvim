@@ -77,6 +77,7 @@ function ____exports.plugins()
     return PLUGINS
 end
 local function post_update(spec)
+    log.debug("post-update %s", spec[1])
     local run = spec.run
     if type(run) == "function" then
         run(nil)
@@ -95,21 +96,18 @@ function ____exports.install()
                 spec.from,
                 spec.__path,
                 "--depth",
-                "1"
+                "1",
+                "--progress"
             }}):run()
             if code == nil then
                 return
             end
-            log.debug(
-                "code %d, signal: %d, err: %s, out: %s",
-                code,
-                signal,
-                out,
-                err
-            )
+            log.debug(out)
             if code == 0 then
                 spec.__state = "LOAD"
                 post_update(spec)
+            else
+                log.error("code: %d, signal: %d, err: %s", code, signal, err)
             end
         elseif spec.__state == "MOVE" then
             log.debug("move %s", name)

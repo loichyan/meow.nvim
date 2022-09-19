@@ -2,23 +2,22 @@
 local ____exports = {}
 local log = require("spark.log")
 local uv = vim.loop
-local function new_pipe(cb)
+local function new_pipe()
     local pipe, err = uv.new_pipe()
     if pipe == nil then
         log.error(err)
         return
     end
-    uv.read_start(
-        pipe,
-        function(err, ok)
-            if err ~= nil then
-                log.error(err)
-            else
-                cb(ok)
-            end
-        end
-    )
     return pipe
+end
+local function mk_pipe_reader(cb)
+    return function(err, ok)
+        if err ~= nil then
+            log.error(err)
+        elseif ok ~= nil then
+            cb(ok)
+        end
+    end
 end
 ____exports.Job = {new = function(opts)
     return {
@@ -33,35 +32,43 @@ ____exports.Job = {new = function(opts)
                 "run '%s'",
                 table.concat(gOpts.cmd, " ")
             )
-            local ____uv_spawn_5 = uv.spawn
-            local ____table_remove_result_4 = table.remove(gOpts.cmd, 1)
-            local ____gOpts_cmd_2 = gOpts.cmd
-            local ____gOpts_cwd_3 = gOpts.cwd
             local ____temp_0
-            if not opts.onstdout then
+            if opts.onstdout == nil then
                 ____temp_0 = nil
             else
-                ____temp_0 = new_pipe(opts.onstdout)
+                ____temp_0 = new_pipe()
             end
+            local stdout = ____temp_0
             local ____temp_1
-            if not opts.onstderr then
+            if opts.onstderr == nil then
                 ____temp_1 = nil
             else
-                ____temp_1 = new_pipe(opts.onstderr)
+                ____temp_1 = new_pipe()
             end
-            local ok, err = ____uv_spawn_5(
-                ____table_remove_result_4,
-                {args = ____gOpts_cmd_2, cwd = ____gOpts_cwd_3, stdio = {nil, ____temp_0, ____temp_1}},
-                function(____, code, signal)
+            local stderr = ____temp_1
+            local hd
+            hd = uv.spawn(
+                table.remove(gOpts.cmd, 1),
+                {args = gOpts.cmd, cwd = gOpts.cwd, stdio = {nil, stdout, stderr}},
+                function(code, signal)
                     self.__exited = true
+                    uv.close(hd)
                     if opts.onexit ~= nil then
                         opts.onexit(code, signal)
                     end
                 end
             )
-            if ok == nil then
-                log.error(err)
-                self.__exited = true
+            if stdout ~= nil and opts.onstdout ~= nil then
+                uv.read_start(
+                    stdout,
+                    mk_pipe_reader(opts.onstdout)
+                )
+            end
+            if stderr ~= nil and opts.onstderr ~= nil then
+                uv.read_start(
+                    stderr,
+                    mk_pipe_reader(opts.onstderr)
+                )
             end
             return self
         end,
@@ -69,12 +76,12 @@ ____exports.Job = {new = function(opts)
             if timeout == nil then
                 timeout = 5000
             end
-            vim.wait(
+            return vim.wait(
                 timeout,
                 function()
                     return self.__exited
                 end,
-                10
+                200
             )
         end,
         run = function(self, timeout)
@@ -91,13 +98,20 @@ ____exports.Job = {new = function(opts)
                     signal = s
                 end,
                 onstdout = function(data)
-                    stdout = stdout .. data
+                    stdout = stdout .. data .. "\n"
                 end,
                 onstderr = function(data)
-                    stderr = stderr .. data
+                    stderr = stderr .. data .. "\n"
                 end
             })
-            self:wait(timeout)
+            local wait_ok, wait_code = self:wait(timeout)
+            if not wait_ok then
+                if wait_code == -1 then
+                    log.error("waiting is timeout")
+                else
+                    log.error("waiting is interrupted")
+                end
+            end
             if code == nil or signal == nil then
                 return
             end

@@ -16,7 +16,7 @@ export interface Job {
   readonly __opts: JobOpts;
   __exited: boolean;
   spawn(this: Job, opts?: SpawnOpts): Job;
-  wait(this: Job, timeout?: number): void;
+  wait(this: Job, timeout?: number): ReturnType<typeof vim.wait>;
   run(
     this: Job,
     timeout?: number
@@ -30,23 +30,26 @@ interface JobConstructor {
   new: Lua.MkFn<(opts: JobOpts) => Job>;
 }
 
-function new_pipe(
-  this: void,
-  cb: Lua.MkFn<(data: string) => void>
-): uv.pipe_t | undefined {
+function new_pipe(this: void): uv.pipe_t | undefined {
   const [pipe, err] = uv.new_pipe();
   if (pipe == undefined) {
     log.error(err);
     return;
   }
-  uv.read_start(pipe, (err, ok) => {
+  return pipe;
+}
+
+function mk_pipe_reader(
+  this: void,
+  cb: (this: void, data: string) => void
+): Parameters<uv.read_start>[1] {
+  return (err, ok) => {
     if (err != undefined) {
       log.error(err);
-    } else {
+    } else if (ok != undefined) {
       cb(ok);
     }
-  });
-  return pipe;
+  };
 }
 
 export const Job: JobConstructor = {
@@ -57,37 +60,38 @@ export const Job: JobConstructor = {
       spawn(opts = {}) {
         const gOpts = this.__opts;
         log.debug("run '%s'", table.concat(gOpts.cmd, " "));
-        const [ok, err] = uv.spawn(
+        const stdout = opts.onstdout == undefined ? undefined : new_pipe();
+        const stderr = opts.onstderr == undefined ? undefined : new_pipe();
+        const [hd] = uv.spawn(
           table.remove(gOpts.cmd, 1)!,
           {
             args: gOpts.cmd,
             cwd: gOpts.cwd,
-            stdio: [
-              undefined as any,
-              !opts.onstdout ? undefined : new_pipe(opts.onstdout),
-              !opts.onstderr ? undefined : new_pipe(opts.onstderr),
-            ],
+            stdio: [undefined as any, stdout, stderr],
           },
           (code, signal) => {
             this.__exited = true;
+            uv.close(hd);
             if (opts.onexit != undefined) {
               opts.onexit(code, signal);
             }
           }
         );
-        if (ok == undefined) {
-          log.error(err);
-          this.__exited = true;
+        if (stdout != undefined && opts.onstdout != undefined) {
+          uv.read_start(stdout, mk_pipe_reader(opts.onstdout));
+        }
+        if (stderr != undefined && opts.onstderr != undefined) {
+          uv.read_start(stderr, mk_pipe_reader(opts.onstderr));
         }
         return this;
       },
       wait(timeout = 5000) {
-        vim.wait(
+        return vim.wait(
           timeout,
           () => {
             return this.__exited;
           },
-          10
+          200
         );
       },
       run(timeout = 5000) {
@@ -101,13 +105,20 @@ export const Job: JobConstructor = {
             signal = s;
           },
           onstdout(data) {
-            stdout += data;
+            stdout += data + "\n";
           },
           onstderr(data) {
-            stderr += data;
+            stderr += data + "\n";
           },
         });
-        this.wait(timeout);
+        const [wait_ok, wait_code] = this.wait(timeout);
+        if (!wait_ok) {
+          if (wait_code == -1) {
+            log.error("waiting is timeout");
+          } else {
+            log.error("waiting is interrupted");
+          }
+        }
         if (code == undefined || signal == undefined) {
           return $multi() as any;
         }

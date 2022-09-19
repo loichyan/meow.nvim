@@ -28,10 +28,17 @@ local function factory(level)
     local lv = level2vim(level)
     return function(fmt, ...)
         if lv >= level2vim(CONFIG.log.level) then
-            vim.notify(
-                string.format(fmt, ...),
-                lv
-            )
+            local msg = string.format(fmt, ...)
+            local function do_log()
+                vim.notify(msg, lv)
+            end
+            if not vim.in_fast_event() then
+                do_log()
+            else
+                vim.schedule(function()
+                    do_log()
+                end)
+            end
         end
     end
 end

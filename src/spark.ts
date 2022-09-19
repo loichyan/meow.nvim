@@ -78,6 +78,7 @@ export function plugins(this: void): Spec[] {
 }
 
 function post_update(this: void, spec: Spec) {
+  log.debug("post-update %s", spec[1]);
   const run = spec.run;
   if (type(run) == "function") {
     (run as any)();
@@ -92,21 +93,25 @@ export function install(this: void) {
     if (spec.__state == "CLONE") {
       log.debug("clone %s", name);
       const [code, signal, out, err] = Job.new({
-        cmd: ["git", "clone", spec.from, spec.__path, "--depth", "1"],
+        cmd: [
+          "git",
+          "clone",
+          spec.from,
+          spec.__path,
+          "--depth",
+          "1",
+          "--progress",
+        ],
       }).run();
       if (code == undefined) {
         return;
       }
-      log.debug(
-        "code %d, signal: %d, err: %s, out: %s",
-        code,
-        signal,
-        out,
-        err
-      );
+      log.debug(out);
       if (code == 0) {
         spec.__state = "LOAD";
         post_update(spec);
+      } else {
+        log.error("code: %d, signal: %d, err: %s", code, signal, err);
       }
     } else if (spec.__state == "MOVE") {
       log.debug("move %s", name);

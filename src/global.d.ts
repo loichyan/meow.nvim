@@ -174,7 +174,7 @@ declare namespace uv {
   type new_pipe = fn<[ipc?: boolean], [pipe_t, undefined]>;
 
   type read_start = fn<
-    [stream: stream_t, cb: callback<string>],
+    [stream: stream_t, cb: callback<string | undefined>],
     [0, undefined]
   >;
 
@@ -190,13 +190,22 @@ declare namespace uv {
     hide?: boolean;
   }
 
+  type process_t = Lua.MkUserdata<{ [__process_t]: Lua.brand }>;
+  const __process_t: unique symbol;
+
   type spawn = fn<
     [
       path: string,
       opts?: spawn_opts,
-      onexit?: (code: number, signal: number) => void
+      onexit?: (this: void, code: number, signal: number) => void
     ],
-    [0, undefined]
+    [process_t, number],
+    never
+  >;
+
+  type close = fn<
+    [hd: process_t, cb?: (this: void) => void],
+    [undefined, undefined]
   >;
 }
 
@@ -237,17 +246,27 @@ declare namespace vim {
     const read_start: uv.read_start;
 
     const spawn: uv.spawn;
+
+    const close: uv.close;
   }
 
   const notify: Lua.MkFn<(msg: string, level?: vim.log.levels) => void>;
 
   const wait: Lua.MkFn<
-    (timeout: number, cb?: Lua.MkFn<() => void>, interval?: number) => void
+    (
+      timeout: number,
+      cb?: Lua.MkFn<() => boolean>,
+      interval?: number
+    ) => LuaMultiReturn<[true, undefined] | [false, -1] | [false, -2]>
   >;
 
   const inspect: Lua.MkFn<(t: any) => string>;
 
   const cmd: Lua.MkFn<(s: string) => void>;
+
+  const in_fast_event: Lua.MkFn<() => boolean>;
+
+  const schedule: Lua.MkFn<(cb: (this: void) => void) => void>;
 
   const tbl_extend: <
     B extends "force" | "keep",

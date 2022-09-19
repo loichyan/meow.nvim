@@ -19,7 +19,17 @@ function factory(this: void, level: LogLevel) {
   const lv = level2vim(level);
   return function (this: void, fmt: string, ...args: any[]) {
     if (lv >= level2vim(CONFIG.log.level)) {
-      vim.notify(string.format(fmt, ...args), lv);
+      const msg = string.format(fmt, ...args);
+      function do_log(this: void) {
+        vim.notify(msg, lv);
+      }
+      if (!vim.in_fast_event()) {
+        do_log();
+      } else {
+        vim.schedule(() => {
+          do_log();
+        });
+      }
     }
   };
 }
