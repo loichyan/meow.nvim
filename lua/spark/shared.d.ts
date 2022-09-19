@@ -1,5 +1,5 @@
 export declare type LogLevel = "DEBUG" | "INFO" | "WARN" | "ERROR";
-export declare type SpecState = "NONE" | "MOVE" | "CLONE" | "REMOVE" | "LOAD" | "AFTER_LOAD" | "LOADED";
+export declare type SpecState = "NONE" | "MOVE" | "CLONE" | "REMOVE" | "LOAD" | "POST_LOAD" | "LOADED";
 export interface Spec {
     [1]: string;
     from: string;
@@ -19,7 +19,7 @@ export interface Config {
     log: {
         level: LogLevel;
     };
-    after_load: Lua.MkFn<(spec: Spec) => void>;
+    post_load: Lua.MkFn<(spec: Spec) => void>;
 }
 export declare const CONFIG: Config;
 export declare const PLUGINS: Spec[];

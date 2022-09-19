@@ -56,11 +56,7 @@ export function resolve_after(
       const [state, err] = visit(ref_node[1]);
       if (state == undefined) {
         return $multi(undefined, err);
-      } else if (
-        state != "LOAD" &&
-        state != "AFTER_LOAD" &&
-        state != "LOADED"
-      ) {
+      } else if (state != "LOAD" && state != "POST_LOAD" && state != "LOADED") {
         to_load = false;
       }
     }

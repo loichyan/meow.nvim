@@ -16,7 +16,7 @@ function ____exports.validate(orig)
             vim.inspect(orig)
         )
     elseif string.sub(name, 1, 1) == "$" then
-        spec2.__state = "AFTER_LOAD"
+        spec2.__state = "POST_LOAD"
     else
         if spec2.from == "" then
             return nil, string.format("'from' is missed in '%s'", name)

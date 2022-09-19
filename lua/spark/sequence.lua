@@ -27,7 +27,7 @@ function ____exports.resolve_after(specs)
             local state, err = visit(ref_node[1])
             if state == nil then
                 return nil, err
-            elseif state ~= "LOAD" and state ~= "AFTER_LOAD" and state ~= "LOADED" then
+            elseif state ~= "LOAD" and state ~= "POST_LOAD" and state ~= "LOADED" then
                 to_load = false
             end
         end

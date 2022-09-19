@@ -43,7 +43,7 @@ export function setup(this: void, config?: DeepParitial<Config>) {
       if (is_start == undefined) {
         spec.__state = "CLONE";
       } else if (is_start) {
-        spec.__state = "AFTER_LOAD";
+        spec.__state = "POST_LOAD";
       } else if (!spec.disable) {
         spec.__state = "LOAD";
       } else if (is_start != spec.start) {
@@ -123,12 +123,18 @@ export function load(this: void) {
     if (spec.__state == "LOAD") {
       log.debug("load %s", name);
       vim.cmd("packadd " + name);
-      spec.__state = "AFTER_LOAD";
+      spec.__state = "POST_LOAD";
     }
-    if (spec.__state == "AFTER_LOAD") {
-      log.debug("after load %s", name);
+  }
+}
+
+export function post_load(this: void) {
+  for (const [_, spec] of ipairs(PLUGINS)) {
+    const name = spec[1];
+    if (spec.__state == "POST_LOAD") {
+      log.debug("post-load %s", name);
       spec.setup();
-      CONFIG.after_load(spec);
+      CONFIG.post_load(spec);
     }
   }
 }

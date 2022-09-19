@@ -22,7 +22,7 @@ export function validate(
       string.format("plugin name must be specified for '%s'", vim.inspect(orig))
     );
   } else if (string.sub(name, 1, 1) == "$") {
-    spec2.__state = "AFTER_LOAD";
+    spec2.__state = "POST_LOAD";
   } else {
     if (spec2.from == "") {
       return $multi(undefined, string.format("'from' is missed in '%s'", name));

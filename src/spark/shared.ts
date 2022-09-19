@@ -8,7 +8,7 @@ export type SpecState =
   | "CLONE"
   | "REMOVE"
   | "LOAD"
-  | "AFTER_LOAD"
+  | "POST_LOAD"
   | "LOADED";
 
 export interface Spec {
@@ -43,7 +43,7 @@ export interface Config {
   log: {
     level: LogLevel;
   };
-  after_load: Lua.MkFn<(spec: Spec) => void>;
+  post_load: Lua.MkFn<(spec: Spec) => void>;
 }
 
 export const CONFIG: Config = {
@@ -52,7 +52,7 @@ export const CONFIG: Config = {
   log: {
     level: "WARN",
   },
-  after_load() {},
+  post_load() {},
 };
 
 export const PLUGINS: Spec[] = [];

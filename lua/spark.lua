@@ -49,7 +49,7 @@ function ____exports.setup(config)
             if is_start == nil then
                 spec.__state = "CLONE"
             elseif is_start then
-                spec.__state = "AFTER_LOAD"
+                spec.__state = "POST_LOAD"
             elseif not spec.disable then
                 spec.__state = "LOAD"
             elseif is_start ~= spec.start then
@@ -128,12 +128,17 @@ function ____exports.load()
         if spec.__state == "LOAD" then
             log.debug("load %s", name)
             vim.cmd("packadd " .. name)
-            spec.__state = "AFTER_LOAD"
+            spec.__state = "POST_LOAD"
         end
-        if spec.__state == "AFTER_LOAD" then
-            log.debug("after load %s", name)
+    end
+end
+function ____exports.post_load()
+    for _, spec in ipairs(PLUGINS) do
+        local name = spec[1]
+        if spec.__state == "POST_LOAD" then
+            log.debug("post-load %s", name)
             spec.setup()
-            CONFIG.after_load(spec)
+            CONFIG.post_load(spec)
         end
     end
 end

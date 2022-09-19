@@ -24,7 +24,7 @@ ____exports.CONFIG = {
         "site/pack/spark"
     ),
     log = {level = "WARN"},
-    after_load = function()
+    post_load = function()
     end
 }
 ____exports.PLUGINS = {}
