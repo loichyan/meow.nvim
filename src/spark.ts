@@ -127,6 +127,7 @@ export function load(this: void) {
     }
     if (spec.__state == "AFTER_LOAD") {
       log.debug("after load %s", name);
+      spec.setup();
       CONFIG.after_load(spec);
     }
   }

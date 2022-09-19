@@ -17,6 +17,7 @@ export interface Spec {
   start: boolean;
   disable: boolean;
   priority: number;
+  setup: Lua.MkFn<() => void>;
   after: string[];
   run: Lua.MkFn<() => void> | string[];
   __state: SpecState;
@@ -29,6 +30,7 @@ export const DEFAULT_SPEC: Spec = {
   start: false,
   disable: false,
   priority: 0,
+  setup() {},
   after: [],
   run() {},
   __state: "NONE",
@@ -36,7 +38,7 @@ export const DEFAULT_SPEC: Spec = {
 };
 
 export interface Config {
-  [1]: Lua.MkFn<(use: Lua.MkFn<(spec: DeepParitial<Spec>) => void>) => void>;
+  [1]: Lua.MkFn<(use: Lua.MkFn<(spec: Partial<Spec>) => void>) => void>;
   root: string;
   log: {
     level: LogLevel;

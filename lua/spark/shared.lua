@@ -8,6 +8,8 @@ ____exports.DEFAULT_SPEC = {
     start = false,
     disable = false,
     priority = 0,
+    setup = function()
+    end,
     after = {},
     run = function()
     end,

@@ -132,6 +132,7 @@ function ____exports.load()
         end
         if spec.__state == "AFTER_LOAD" then
             log.debug("after load %s", name)
+            spec.setup()
             CONFIG.after_load(spec)
         end
     end
