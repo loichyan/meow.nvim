@@ -63,6 +63,7 @@ function ____exports.setup(config)
         local spec = new_spec({[1] = name, start = start})
         spec.__state = "REMOVE"
         table.insert(plugins, spec)
+        spec.__path = plug_path(spec.start, name)
     end
     local resolved, msg = resolve(plugins)
     if resolved == nil then

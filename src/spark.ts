@@ -60,6 +60,7 @@ export function setup(this: void, config?: DeepParitial<Config>) {
     const spec = new_spec({ [1]: name, start });
     spec.__state = "REMOVE";
     table.insert(plugins, spec);
+    spec.__path = plug_path(spec.start, name);
   }
   // Resolve load sequence.
   const [resolved, msg] = resolve(plugins);
