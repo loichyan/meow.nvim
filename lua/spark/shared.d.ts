@@ -6,9 +6,9 @@ export interface Spec {
     start: boolean;
     disable: boolean;
     priority: number;
-    setup: Lua.MkFn<() => void>;
+    setup?: Lua.MkFn<() => void>;
     after: string[];
-    run: Lua.MkFn<() => void> | string[];
+    run?: Lua.MkFn<() => void> | string[];
     __state: SpecState;
     __path: string;
 }
@@ -19,7 +19,7 @@ export interface Config {
     log: {
         level: LogLevel;
     };
-    post_load: Lua.MkFn<(spec: Spec) => void>;
+    post_load?: Lua.MkFn<(spec: Spec) => void>;
 }
 export declare const CONFIG: Config;
 export declare const PLUGINS: Spec[];

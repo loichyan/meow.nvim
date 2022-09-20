@@ -17,9 +17,9 @@ export interface Spec {
   start: boolean;
   disable: boolean;
   priority: number;
-  setup: Lua.MkFn<() => void>;
+  setup?: Lua.MkFn<() => void>;
   after: string[];
-  run: Lua.MkFn<() => void> | string[];
+  run?: Lua.MkFn<() => void> | string[];
   __state: SpecState;
   __path: string;
 }
@@ -30,9 +30,7 @@ export const DEFAULT_SPEC: Spec = {
   start: false,
   disable: false,
   priority: 0,
-  setup() {},
   after: [],
-  run() {},
   __state: "NONE",
   __path: "",
 };
@@ -43,7 +41,7 @@ export interface Config {
   log: {
     level: LogLevel;
   };
-  post_load: Lua.MkFn<(spec: Spec) => void>;
+  post_load?: Lua.MkFn<(spec: Spec) => void>;
 }
 
 export const CONFIG: Config = {
@@ -52,7 +50,6 @@ export const CONFIG: Config = {
   log: {
     level: "WARN",
   },
-  post_load() {},
 };
 
 export const PLUGINS: Spec[] = [];

@@ -52,6 +52,10 @@ function mk_pipe_reader(
   };
 }
 
+function cmd2str(this: void, cmd: string[]): string {
+  return table.concat(cmd, " ");
+}
+
 export const Job: JobConstructor = {
   new(opts) {
     return {
@@ -59,13 +63,14 @@ export const Job: JobConstructor = {
       __exited: false,
       spawn(opts = {}) {
         const gOpts = this.__opts;
-        log.debug("run '%s'", table.concat(gOpts.cmd, " "));
+        const cmd = gOpts.cmd;
         const stdout = opts.onstdout == undefined ? undefined : new_pipe();
         const stderr = opts.onstderr == undefined ? undefined : new_pipe();
+        log.debug("run '%s'", cmd2str(cmd));
         const [hd] = uv.spawn(
-          table.remove(gOpts.cmd, 1)!,
+          cmd[0],
           {
-            args: gOpts.cmd,
+            args: [...unpack(cmd, 2)],
             cwd: gOpts.cwd,
             stdio: [undefined as any, stdout, stderr],
           },
@@ -111,16 +116,18 @@ export const Job: JobConstructor = {
             stderr += data + "\n";
           },
         });
-        const [wait_ok, wait_code] = this.wait(timeout);
+        const [wait_ok] = this.wait(timeout);
         if (!wait_ok) {
-          if (wait_code == -1) {
-            log.error("waiting is timeout");
-          } else {
-            log.error("waiting is interrupted");
-          }
+          log.error("waiting '%s' failed", cmd2str(this.__opts.cmd));
         }
         if (code == undefined || signal == undefined) {
-          return $multi() as any;
+          return $multi(undefined, undefined, undefined, undefined);
+        } else if (code != 0) {
+          log.error(
+            "run '%s' exited with error '%s'",
+            cmd2str(this.__opts.cmd),
+            stderr
+          );
         }
         return $multi(code, signal, stdout, stderr);
       },

@@ -19,6 +19,9 @@ local function mk_pipe_reader(cb)
         end
     end
 end
+local function cmd2str(cmd)
+    return table.concat(cmd, " ")
+end
 ____exports.Job = {new = function(opts)
     return {
         __opts = opts,
@@ -28,10 +31,7 @@ ____exports.Job = {new = function(opts)
                 opts = {}
             end
             local gOpts = self.__opts
-            log.debug(
-                "run '%s'",
-                table.concat(gOpts.cmd, " ")
-            )
+            local cmd = gOpts.cmd
             local ____temp_0
             if opts.onstdout == nil then
                 ____temp_0 = nil
@@ -46,10 +46,18 @@ ____exports.Job = {new = function(opts)
                 ____temp_1 = new_pipe()
             end
             local stderr = ____temp_1
+            log.debug(
+                "run '%s'",
+                cmd2str(cmd)
+            )
             local hd
             hd = uv.spawn(
-                table.remove(gOpts.cmd, 1),
-                {args = gOpts.cmd, cwd = gOpts.cwd, stdio = {nil, stdout, stderr}},
+                cmd[1],
+                {
+                    args = {unpack(cmd, 2)},
+                    cwd = gOpts.cwd,
+                    stdio = {nil, stdout, stderr}
+                },
                 function(code, signal)
                     self.__exited = true
                     uv.close(hd)
@@ -104,16 +112,21 @@ ____exports.Job = {new = function(opts)
                     stderr = stderr .. data .. "\n"
                 end
             })
-            local wait_ok, wait_code = self:wait(timeout)
+            local wait_ok = self:wait(timeout)
             if not wait_ok then
-                if wait_code == -1 then
-                    log.error("waiting is timeout")
-                else
-                    log.error("waiting is interrupted")
-                end
+                log.error(
+                    "waiting '%s' failed",
+                    cmd2str(self.__opts.cmd)
+                )
             end
             if code == nil or signal == nil then
-                return
+                return nil, nil, nil, nil
+            elseif code ~= 0 then
+                log.error(
+                    "run '%s' exited with error '%s'",
+                    cmd2str(self.__opts.cmd),
+                    stderr
+                )
             end
             return code, signal, stdout, stderr
         end

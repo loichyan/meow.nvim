@@ -78,12 +78,14 @@ export function plugins(this: void): Spec[] {
 }
 
 function post_update(this: void, spec: Spec) {
-  log.debug("post-update %s", spec[1]);
   const run = spec.run;
-  if (type(run) == "function") {
-    (run as any)();
-  } else {
-    Job.new({ cmd: run as any, cwd: spec.__path }).run();
+  if (run != undefined) {
+    log.debug("post-update %s", spec[1]);
+    if (type(run) == "function") {
+      (run as Lua.MkFn<() => void>)();
+    } else {
+      Job.new({ cmd: run as string[], cwd: spec.__path }).run();
+    }
   }
 }
 
@@ -91,8 +93,8 @@ export function install(this: void) {
   for (const [_, spec] of ipairs(PLUGINS)) {
     const name = spec[1];
     if (spec.__state == "CLONE") {
-      log.debug("clone %s", name);
-      const [code, signal, out, err] = Job.new({
+      log.debug("install:clone %s", name);
+      const [code] = Job.new({
         cmd: [
           "git",
           "clone",
@@ -103,18 +105,12 @@ export function install(this: void) {
           "--progress",
         ],
       }).run();
-      if (code == undefined) {
-        return;
-      }
-      log.debug(out);
       if (code == 0) {
         spec.__state = "LOAD";
         post_update(spec);
-      } else {
-        log.error("code: %d, signal: %d, err: %s", code, signal, err);
       }
     } else if (spec.__state == "MOVE") {
-      log.debug("move %s", name);
+      log.debug("install:move %s", name);
       sys.rename(plug_path(!spec.start, name), spec.__path);
       spec.__state = "LOAD";
       break;
@@ -134,12 +130,19 @@ export function load(this: void) {
 }
 
 export function post_load(this: void) {
+  const cfg_post_load = CONFIG.post_load;
   for (const [_, spec] of ipairs(PLUGINS)) {
     const name = spec[1];
     if (spec.__state == "POST_LOAD") {
-      log.debug("post-load %s", name);
-      spec.setup();
-      CONFIG.post_load(spec);
+      const setup = spec.setup;
+      if (setup != undefined) {
+        log.debug("post-load:setup %s", name);
+        setup();
+      }
+      if (cfg_post_load != undefined) {
+        log.debug("post-load:config %s", name);
+        cfg_post_load(spec);
+      }
     }
   }
 }

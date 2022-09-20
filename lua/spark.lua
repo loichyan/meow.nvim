@@ -77,20 +77,22 @@ function ____exports.plugins()
     return PLUGINS
 end
 local function post_update(spec)
-    log.debug("post-update %s", spec[1])
     local run = spec.run
-    if type(run) == "function" then
-        run(nil)
-    else
-        Job.new({cmd = run, cwd = spec.__path}):run()
+    if run ~= nil then
+        log.debug("post-update %s", spec[1])
+        if type(run) == "function" then
+            run()
+        else
+            Job.new({cmd = run, cwd = spec.__path}):run()
+        end
     end
 end
 function ____exports.install()
     for _, spec in ipairs(PLUGINS) do
         local name = spec[1]
         if spec.__state == "CLONE" then
-            log.debug("clone %s", name)
-            local code, signal, out, err = Job.new({cmd = {
+            log.debug("install:clone %s", name)
+            local code = Job.new({cmd = {
                 "git",
                 "clone",
                 spec.from,
@@ -99,18 +101,12 @@ function ____exports.install()
                 "1",
                 "--progress"
             }}):run()
-            if code == nil then
-                return
-            end
-            log.debug(out)
             if code == 0 then
                 spec.__state = "LOAD"
                 post_update(spec)
-            else
-                log.error("code: %d, signal: %d, err: %s", code, signal, err)
             end
         elseif spec.__state == "MOVE" then
-            log.debug("move %s", name)
+            log.debug("install:move %s", name)
             sys.rename(
                 plug_path(not spec.start, name),
                 spec.__path
@@ -131,12 +127,19 @@ function ____exports.load()
     end
 end
 function ____exports.post_load()
+    local cfg_post_load = CONFIG.post_load
     for _, spec in ipairs(PLUGINS) do
         local name = spec[1]
         if spec.__state == "POST_LOAD" then
-            log.debug("post-load %s", name)
-            spec.setup()
-            CONFIG.post_load(spec)
+            local setup = spec.setup
+            if setup ~= nil then
+                log.debug("post-load:setup %s", name)
+                setup()
+            end
+            if cfg_post_load ~= nil then
+                log.debug("post-load:config %s", name)
+                cfg_post_load(spec)
+            end
         end
     end
 end

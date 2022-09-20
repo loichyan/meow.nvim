@@ -8,11 +8,7 @@ ____exports.DEFAULT_SPEC = {
     start = false,
     disable = false,
     priority = 0,
-    setup = function()
-    end,
     after = {},
-    run = function()
-    end,
     __state = "NONE",
     __path = ""
 }
@@ -23,9 +19,7 @@ ____exports.CONFIG = {
         vim.fn.stdpath("data"),
         "site/pack/spark"
     ),
-    log = {level = "WARN"},
-    post_load = function()
-    end
+    log = {level = "WARN"}
 }
 ____exports.PLUGINS = {}
 return ____exports
