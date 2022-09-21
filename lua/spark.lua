@@ -81,13 +81,23 @@ function ____exports.plugins()
 end
 local function post_update(spec)
     local run = spec.run
+    local name = spec[1]
     if run ~= nil then
-        log.debug("post-update %s", spec[1])
+        log.debug("post-update:run %s", spec[1])
         if type(run) == "function" then
             run()
         else
             Job.new({cmd = run, cwd = spec.__path}):run()
         end
+    end
+    local path = join_path(spec.__path, "doc")
+    local ____sys_exists_result_type_0 = sys.exists(path)
+    if ____sys_exists_result_type_0 ~= nil then
+        ____sys_exists_result_type_0 = ____sys_exists_result_type_0.type
+    end
+    if ____sys_exists_result_type_0 == "directory" then
+        log.debug("load:gendoc %s", name)
+        vim.cmd("helptags " .. path)
     end
 end
 function ____exports.install()

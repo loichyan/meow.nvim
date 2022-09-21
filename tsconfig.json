@@ -12,5 +12,5 @@
   "tstl": {
     "buildMode": "library"
   },
-  "include": ["src/**/*"]
+  "include": ["src/**/*", "globals.d.ts"]
 }

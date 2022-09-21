@@ -70,4 +70,11 @@ function ____exports.rename(path, newpath)
     end
     return true
 end
+function ____exports.exists(path)
+    local stat = uv.fs_lstat(path)
+    if stat == nil then
+        return
+    end
+    return stat
+end
 return ____exports

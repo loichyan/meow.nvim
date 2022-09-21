@@ -73,3 +73,11 @@ export function rename(this: void, path: string, newpath: string): boolean {
   }
   return true;
 }
+
+export function exists(this: void, path: string): uv.fs_stat_obj | undefined {
+  const [stat] = uv.fs_lstat(path);
+  if (stat == undefined) {
+    return;
+  }
+  return stat;
+}

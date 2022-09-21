@@ -1,3 +1,4 @@
+// TODO: export some types
 import { Config, CONFIG, PLUGINS, Spec } from "./spark/shared";
 import * as sys from "./spark/sys";
 import { deep_merge, join_path } from "./spark/utils";
@@ -82,13 +83,20 @@ export function plugins(this: void): Spec[] {
 
 function post_update(this: void, spec: Spec) {
   const run = spec.run;
+  const name = spec[1];
   if (run != undefined) {
-    log.debug("post-update %s", spec[1]);
+    log.debug("post-update:run %s", spec[1]);
     if (type(run) == "function") {
       (run as Lua.MkFn<() => void>)();
     } else {
       Job.new({ cmd: run as string[], cwd: spec.__path }).run();
     }
+  }
+  // Generate documentation.
+  const path = join_path(spec.__path, "doc");
+  if (sys.exists(path)?.type == "directory") {
+    log.debug("load:gendoc %s", name);
+    vim.cmd("helptags " + path);
   }
 }
 
@@ -124,6 +132,7 @@ export function load(this: void) {
   for (const [_, spec] of ipairs(PLUGINS)) {
     const name = spec[1];
     if (spec.__state == "LOAD") {
+      // Load plugin.
       log.debug("load %s", name);
       vim.cmd("packadd " + name);
       spec.__state = "POST_LOAD";
