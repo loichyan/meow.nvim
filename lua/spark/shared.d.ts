@@ -1,5 +1,5 @@
 export declare type LogLevel = "DEBUG" | "INFO" | "WARN" | "ERROR";
-export declare type SpecState = "NONE" | "MOVE" | "CLONE" | "REMOVE" | "LOAD" | "POST_LOAD" | "LOADED";
+export declare type SpecState = "NONE" | "MOVE" | "CLONE" | "REMOVE" | "DISABLE" | "LOAD" | "POST_LOAD" | "LOADED";
 export interface Spec {
     [1]: string;
     from: string;

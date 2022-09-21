@@ -7,6 +7,7 @@ export type SpecState =
   | "MOVE"
   | "CLONE"
   | "REMOVE"
+  | "DISABLE"
   | "LOAD"
   | "POST_LOAD"
   | "LOADED";

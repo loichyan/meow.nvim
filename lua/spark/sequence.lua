@@ -32,7 +32,7 @@ function ____exports.resolve_after(specs)
             end
         end
         if not to_load then
-            spec.__state = "NONE"
+            spec.__state = "DISABLE"
         end
         node.resolved = true
         table.insert(resolved, spec)

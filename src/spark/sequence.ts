@@ -61,7 +61,7 @@ export function resolve_after(
       }
     }
     if (!to_load) {
-      spec.__state = "NONE";
+      spec.__state = "DISABLE";
     }
     node.resolved = true;
     table.insert(resolved, spec);

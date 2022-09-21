@@ -42,12 +42,14 @@ export function setup(this: void, config?: DeepParitial<Config>) {
       installed.delete(name);
       if (is_start == undefined) {
         spec.__state = "CLONE";
+      } else if (is_start != spec.start) {
+        spec.__state = "MOVE";
       } else if (is_start) {
         spec.__state = "POST_LOAD";
       } else if (!spec.disable) {
         spec.__state = "LOAD";
-      } else if (is_start != spec.start) {
-        spec.__state = "MOVE";
+      } else {
+        spec.__state = "DISABLE";
       }
       // Cache plugin path.
       spec.__path = plug_path(spec.start, name);
@@ -114,7 +116,6 @@ export function install(this: void) {
       log.debug("install:move %s", name);
       sys.rename(plug_path(!spec.start, name), spec.__path);
       spec.__state = "LOAD";
-      break;
     }
   }
 }
@@ -144,6 +145,7 @@ export function post_load(this: void) {
         log.debug("post-load:config %s", name);
         cfg_post_load(spec);
       }
+      spec.__state = "LOADED";
     }
   }
 }

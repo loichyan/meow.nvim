@@ -48,12 +48,14 @@ function ____exports.setup(config)
             installed[name] = nil
             if is_start == nil then
                 spec.__state = "CLONE"
+            elseif is_start ~= spec.start then
+                spec.__state = "MOVE"
             elseif is_start then
                 spec.__state = "POST_LOAD"
             elseif not spec.disable then
                 spec.__state = "LOAD"
-            elseif is_start ~= spec.start then
-                spec.__state = "MOVE"
+            else
+                spec.__state = "DISABLE"
             end
             spec.__path = plug_path(spec.start, name)
         end
@@ -113,7 +115,6 @@ function ____exports.install()
                 spec.__path
             )
             spec.__state = "LOAD"
-            break
         end
     end
 end
@@ -141,6 +142,7 @@ function ____exports.post_load()
                 log.debug("post-load:config %s", name)
                 cfg_post_load(spec)
             end
+            spec.__state = "LOADED"
         end
     end
 end
