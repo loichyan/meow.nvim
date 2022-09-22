@@ -1,5 +1,16 @@
-import { DEFAULT_SPEC, Spec } from "./shared";
+import { Spec } from "./shared";
 import { deep_merge } from "./utils";
+
+const DEFAULT_SPEC: Spec = {
+  [1]: "",
+  from: "",
+  start: false,
+  disable: false,
+  priority: 0,
+  after: [],
+  __state: "NONE",
+  __path: "",
+};
 
 export function new_spec(this: void, spec: DeepParitial<Spec>): Spec {
   return deep_merge(

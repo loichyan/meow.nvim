@@ -14,12 +14,12 @@
       "default": "./lua/spark/*"
     },
     "./types": {
-      "types": "./src/global.d.ts"
+      "types": "./src/globals.d.ts"
     }
   },
   "files": [
     "lua/*",
-    "src/global.d.ts"
+    "src/globals.d.ts"
   ],
   "scripts": {
     "build": "tstl",

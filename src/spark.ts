@@ -1,4 +1,3 @@
-// TODO: export some types
 import { Config, CONFIG, PLUGINS, Spec } from "./spark/shared";
 import * as sys from "./spark/sys";
 import { deep_merge, join_path } from "./spark/utils";
@@ -6,6 +5,8 @@ import * as log from "./spark/log";
 import { new_spec, validate } from "./spark/spec";
 import { resolve } from "./spark/sequence";
 import { Job } from "./spark/job";
+
+export { type Config, type Spec, type LogLevel } from "./spark/shared";
 
 function plug_path(this: void, is_start: boolean, name: string): string {
   let dir = "opt";
@@ -134,7 +135,7 @@ export function load(this: void) {
     if (spec.__state == "LOAD") {
       // Load plugin.
       log.debug("load %s", name);
-      vim.cmd("packadd " + name);
+      vim.cmd("packadd! " + name);
       spec.__state = "POST_LOAD";
     }
   }

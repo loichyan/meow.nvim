@@ -1,9 +1,17 @@
 --[[ Generated with https://github.com/TypeScriptToLua/TypeScriptToLua ]]
 local ____exports = {}
-local ____shared = require("spark.shared")
-local DEFAULT_SPEC = ____shared.DEFAULT_SPEC
 local ____utils = require("spark.utils")
 local deep_merge = ____utils.deep_merge
+local DEFAULT_SPEC = {
+    [1] = "",
+    from = "",
+    start = false,
+    disable = false,
+    priority = 0,
+    after = {},
+    __state = "NONE",
+    __path = ""
+}
 function ____exports.new_spec(spec)
     return deep_merge("keep", {__state = "NONE", __path = ""}, spec, DEFAULT_SPEC)
 end

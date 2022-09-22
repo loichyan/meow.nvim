@@ -25,17 +25,6 @@ export interface Spec {
   __path: string;
 }
 
-export const DEFAULT_SPEC: Spec = {
-  [1]: "",
-  from: "",
-  start: false,
-  disable: false,
-  priority: 0,
-  after: [],
-  __state: "NONE",
-  __path: "",
-};
-
 export interface Config {
   [1]: Lua.MkFn<(use: Lua.MkFn<(spec: Partial<Spec>) => void>) => void>;
   root: string;

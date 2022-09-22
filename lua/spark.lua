@@ -133,7 +133,7 @@ function ____exports.load()
         local name = spec[1]
         if spec.__state == "LOAD" then
             log.debug("load %s", name)
-            vim.cmd("packadd " .. name)
+            vim.cmd("packadd! " .. name)
             spec.__state = "POST_LOAD"
         end
     end
