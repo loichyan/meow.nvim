@@ -6,11 +6,12 @@
     "declaration": true,
     "moduleResolution": "nodenext",
     "outDir": "lua",
+    "rootDir": "src",
     "skipDefaultLibCheck": true,
     "strict": true
   },
   "tstl": {
     "buildMode": "library"
   },
-  "include": ["src/**/*", "src/globals.d.ts"]
+  "include": ["src/**/*"]
 }
