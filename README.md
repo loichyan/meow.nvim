@@ -4,8 +4,8 @@ A lazy and sequential loading plugin manager for neovim written in TypeScript.
 
 ## 📌 Notice
 
-This project is at an early stage of development, and many features such as the
-UI, update plugins, etc. haven't yet been implemented.
+This project is **no longer maintained**, please use
+[lazy.nvim](https://github.com/folke/lazy.nvim) instead.
 
 ## 📝 Todo
 
