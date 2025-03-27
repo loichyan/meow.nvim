@@ -1,0 +1,60 @@
+---@meta _
+
+---@alias MeoSpecs MeoSpec[]|MeoSpec
+
+---@class MeoSpec
+---The identifier of this plugin.
+---
+---The URI to the plugin source can be specified, of which the basename is set
+---to the plugin's name.
+---@field [1] string
+---The URI to the plugin source.
+---@field source string?
+---The checkout target after the source is cloned.
+---@field checkout string?
+---The branch used to track new changes.
+---@field monitor string?
+---Hooks invoked on certain events.
+---@field hooks MeoSpecHooks?
+---An alias of `hooks.post_checkout`.
+---@field build MeoSpecHook?
+---Whether to make this plugin "shadow" other plugins.
+---
+---A shadow plugin is not added to MiniDeps and exists only to perform the setup
+---function on the configured events. This is especially useful for setting up
+---different mini modules independently. By default, any mini plugin (determined
+---by a name starting with "mini.") automatically becomes a shadow plugin.
+---@field shadow MeoSpecCond?
+---Whether to disable this plugin. The default is false. Disabled plugins will
+---not be added to MiniDeps and will therefore be cleaned up.
+---@field disabled MeoSpecCond?
+---Whether to lazily load this plugin. The default is true only if an event
+---handler is set or it is added as a dependency.
+---@field lazy MeoSpecCond?
+---A integer used to manuallly adjust the loading order.
+---
+---Plugins with a lower priority are loaded first. The recommended range is
+---*[0, 100]*, and the default value is set to 50.
+---@field priority integer?
+---The function used to set up this plugin after loading.
+---@field config fun(self:MeoPlugin)|nil
+---A list of plugins that should be loaded before this.
+---
+---For convenience, a plugin spec, which is ALWAYS merged into existing specs,
+---can be specified instead of its name.
+---@field dependencies (string|MeoSpec)[]?
+
+---@alias MeoSpecCond boolean|fun(self:MeoPlugin):boolean
+
+---@class MeoSpecHooks
+---@field pre_install   MeoSpecHook? - Before creating the plugin directory.
+---@field post_install  MeoSpecHook? - After creating the plugin directory.
+---@field pre_checkout  MeoSpecHook? - Before making change in the source.
+---@field post_checkout MeoSpecHook? - After making change in the source.
+
+---@alias MeoSpecHook fun(args:MeoSpecHookArgs)
+
+---@class MeoSpecHookArgs
+---@field path   string - The absolute path to the plugin's directory.
+---@field source string - The resolved `source` from the spec.
+---@field name   string - The resolved `name` from the spec.
