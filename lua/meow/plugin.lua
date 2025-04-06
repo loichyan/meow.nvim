@@ -12,6 +12,7 @@ local SPEC_VTYPES = {
     config = "primitive",
 
     hooks = "table",
+    imports = "list",
 }
 local MINI_SPEC_KEYS = {
     "name",
@@ -36,29 +37,30 @@ end
 ---@field source string?
 ---@field checkout string?
 ---@field monitor string?
----@field hooks MeoSpecHooks
+---@field hooks MeoSpecHooks?
 ---@field shadow MeoSpecCond?
 ---@field disabled MeoSpecCond?
 ---@field lazy MeoSpecCond?
 ---@field priority integer
 ---@field config fun(self:MeoPlugin)|nil
----A set of dependency names.
----@field dependencies table<string,true>
+---@field imports string[]?
 ---Whether added as a dependency.
 ---@field private _is_dep boolean?
+---A set of dependency names.
+---@field private _deps table<string,true>?
 ---The level of this plugin in the dependency graph of a resolved plugin.
 ---@field private _level integer
+---The loading state of this plugin.
 ---@field private _state MeoPluginState
 local Plugin = {}
 
+---Creates a new plugin instance.
 ---@param name string
 ---@return MeoPlugin
 function Plugin.new(name)
     return setmetatable({
         name = name,
-        hooks = {},
         priority = 50,
-        dependencies = {},
         _level = 0,
         _state = 0,
     }, { __index = Plugin })
@@ -73,9 +75,9 @@ function Plugin:_update_spec(spec)
         local vtype = SPEC_VTYPES[key]
         if not vtype then
         elseif vtype == "list" then
-            self[key] = vim.tbl_extend("force", self[key], val)
+            self[key] = vim.list_extend(self[key] or {}, val)
         elseif vtype == "table" then
-            self[key] = vim.list_extend(self[key], val)
+            self[key] = vim.tbl_extend("force", self[key] or {}, val)
         else
             self[key] = val
         end
@@ -83,6 +85,7 @@ function Plugin:_update_spec(spec)
 
     -- Apply property aliases.
     if spec.build then
+        self.hooks = self.hooks or {}
         self.hooks.post_checkout = spec.build
     end
 end
@@ -101,6 +104,7 @@ function Plugin:is_lazy()
     return self:_get_cond("lazy", infer_lazy_state)
 end
 
+---Resolves the specified conditional field.
 ---@param key "shadow"|"disabled"|"lazy"
 ---@param default MeoSpecCond
 ---@return boolean

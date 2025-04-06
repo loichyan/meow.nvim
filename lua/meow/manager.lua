@@ -39,21 +39,27 @@ local plugin_ordering = function(a, b)
 end
 
 ---@class MeoPluginManager
----All registered plugins, indexed by their names.
----@field private _plugins table<string,MeoPlugin>
+---All registered plugins.
+---@field private _plugins MeoPlugin[]
+---A map of all plugins, indexed by their names.
+---@field private _plugin_map table<string,MeoPlugin>
+---@field private _did_setup boolean?
 local Manager = {}
 
 ---Creates a new plugin manager.
 ---@return MeoPluginManager
 function Manager.new()
-    return setmetatable({ _plugins = {} }, { __index = Manager })
+    return setmetatable({
+        _plugins = {},
+        _plugin_map = {},
+    }, { __index = Manager })
 end
 
 ---Returns the plugin specified by name.
 ---@param name string
 ---@return MeoPlugin?
 function Manager:get(name)
-    return self._plugins[name]
+    return self._plugin_map[name]
 end
 
 ---Imports all plugin specs from the direct submodules under the root module.
@@ -70,6 +76,10 @@ function Manager:import(root)
         end
         table.insert(mods, mod)
     end)
+
+    if #mods == 0 then
+        error("failed to determine path of import: " .. root)
+    end
 
     -- Ensure that all modules are imported in alphabetical order.
     table.sort(mods)
@@ -89,26 +99,43 @@ function Manager:import(root)
     end
 end
 
+---Adds one or more plugins from the given spec(s).
 ---@param specs MeoSpecs
 function Manager:add_many(specs)
-    if type(specs[1]) == "string" then
-        self:add(specs)
-    else
+    if #specs > 1 or type(specs[1]) == "table" then
         ---@cast specs MeoSpec[]
         for _, spec in ipairs(specs) do
             self:add(spec)
         end
+    else
+        self:add(specs)
     end
 end
 
----Creates or updates a plugin from the given spec, returning the plugin name.
+---Creates or updates a plugin from the given spec, returning the plugin
+---instance if a name is specified.
 ---@param spec MeoSpec
----@return MeoPlugin
+---@return MeoPlugin?
 function Manager:add(spec)
-    local name, source = Utils.parse_plugin_name(spec[1])
+    if not spec[1] then
+        -- If the spec contains only an imports field, resolve the imports
+        -- immediately; otherwise, defer the resolution after this plugin is
+        -- activated.
+        if spec.imports then
+            for _, mod in ipairs(spec.imports) do
+                self:import(mod)
+            end
+        end
+        return
+    end
 
-    local plugin = self._plugins[name] or Plugin.new(name)
-    self._plugins[name] = plugin
+    local name, source = Utils.parse_plugin_name(spec[1])
+    local plugin = self._plugin_map[name]
+    if not plugin then
+        plugin = Plugin.new(name)
+        table.insert(self._plugins, plugin)
+        self._plugin_map[name] = plugin
+    end
 
     -- Update plugin properties.
     plugin:_update_spec(spec)
@@ -118,15 +145,16 @@ function Manager:add(spec)
         plugin.source = source
     end
 
-    -- Defers resolving dependency specs until the given plugin is determined to
+    -- Defer resolving dependency specs until the given plugin is determined to
     -- be enabled.
-    if spec.dependencies then
-        for _, dep_spec in ipairs(spec.dependencies) do
-            if type(dep_spec) == "string" then
-                dep_spec = { dep_spec }
-            end
-            local dep = self:add(dep_spec)
-            plugin.dependencies[dep.name] = true
+    for _, dep_spec in ipairs(spec.dependencies or {}) do
+        if type(dep_spec) == "string" then
+            dep_spec = { dep_spec }
+        end
+        local dep = self:add(dep_spec)
+        if dep then
+            plugin._deps = plugin._deps or {}
+            plugin._deps[dep.name] = true
             dep._is_dep = true
         end
     end
@@ -139,20 +167,64 @@ end
 ---CAVEAT: This function may only be called once, after which no modifications
 ---may be made to the instance or any added plugins.
 function Manager:setup()
-    for _, plugin in pairs(self._plugins) do
-        if plugin:is_disabled() then
-            plugin._state = PluginState.DISABLED
-        elseif plugin:is_lazy() then
-            MiniDeps.later(function()
-                self:_activate(plugin)
-                self:_load(plugin) -- TODO: set up event handlers
-            end)
-        else
-            MiniDeps.now(function()
-                self:_activate(plugin)
-                self:_load(plugin)
-            end)
+    if self._did_setup then
+        vim.notify("PluginManager has already been initialized", vim.log.levels.WARN)
+        return
+    end
+    MiniDeps.now(function()
+        self:_really_setup()
+    end)
+    self._did_setup = true
+end
+
+function Manager:_really_setup()
+    local idx = 1
+    local plugins = self._plugins
+    while idx <= #plugins do
+        -- Collect and sort start plugins so as to ensure they are loaded in the
+        -- desired order.
+        local starts = {} ---@type MeoPlugin[]
+        repeat
+            local plugin = plugins[idx]
+            idx = idx + 1
+
+            if plugin._state ~= PluginState.NONE then
+            elseif plugin:is_disabled() then
+                plugin._state = PluginState.DISABLED
+            elseif plugin:is_lazy() then
+                MiniDeps.later(function()
+                    -- TODO: set up event handlers
+                    self:_load(plugin)
+                end)
+            else
+                table.insert(starts, plugin)
+            end
+        until idx > #plugins
+
+        table.sort(starts, plugin_ordering)
+        for _, plugin in ipairs(starts) do
+            self:_load(plugin)
+            for _, mod in ipairs(plugin.imports or {}) do
+                self:import(mod)
+            end
         end
+    end
+end
+
+---Loads a plugin if it is not loaded or disabled.
+---@param plugin MeoPlugin
+function Manager:_load(plugin)
+    if plugin._state >= PluginState.LOADING then
+        return
+    end
+
+    for _, dep in ipairs(self:_resolve_dependencies(plugin)) do
+        self:_activate(dep)
+        dep._state = PluginState.LOADING
+        if dep.config then
+            dep:config()
+        end
+        dep._state = PluginState.LOADED
     end
 end
 
@@ -165,25 +237,6 @@ function Manager:_activate(plugin)
     end
     MiniDeps.add(plugin:to_mini())
     plugin._state = PluginState.ACTIVATED
-end
-
----Loads a plugin if it is not loaded or disabled.
----@param plugin MeoPlugin
-function Manager:_load(plugin)
-    -- If a plugin is loading, this call is most likely triggered when resolving
-    -- mergeable values.
-    if plugin._state >= PluginState.LOADING then
-        return
-    end
-
-    for _, dep in ipairs(self:_resolve_dependencies(plugin)) do
-        self:_activate(dep)
-        self._state = PluginState.LOADING
-        if dep.config then
-            dep:config()
-        end
-        dep._state = PluginState.LOADED
-    end
 end
 
 ---Resolves dependencies that are not loaded and required by the given plugin.
@@ -209,8 +262,8 @@ function Manager:_collect_dependencies(result, plugin)
     plugin._level = -1 -- Set a temporary mark to detect circular references.
 
     local dep_level = 0
-    for dep_name, _ in pairs(plugin.dependencies) do
-        local dep = self._plugins[dep_name]
+    for dep_name, _ in pairs(plugin._deps or {}) do
+        local dep = self._plugin_map[dep_name]
         if not dep then
             error(("found undefined dependency: %s"):format(dep_name))
         end

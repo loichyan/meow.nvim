@@ -7,7 +7,7 @@
 ---
 ---The URI to the plugin source can be specified, of which the basename is set
 ---to the plugin's name.
----@field [1] string
+---@field [1] string?
 ---The URI to the plugin source.
 ---@field source string?
 ---The checkout target after the source is cloned.
@@ -43,6 +43,11 @@
 ---For convenience, a plugin spec, which is ALWAYS merged into existing specs,
 ---can be specified instead of its name.
 ---@field dependencies (string|MeoSpec)[]?
+---A list of module paths to load additional specs.
+---
+---All the direct modules under the given paths are imported. Every module must
+---return a plugin spec or a list of plugin specs.
+---@field imports string[]?
 
 ---@alias MeoSpecCond boolean|fun(self:MeoPlugin):boolean
 
