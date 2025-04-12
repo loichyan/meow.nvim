@@ -147,15 +147,21 @@ function Manager:add(spec)
 
     -- Defer resolving dependency specs until the given plugin is determined to
     -- be enabled.
-    for _, dep_spec in ipairs(spec.dependencies or {}) do
-        if type(dep_spec) == "string" then
-            dep_spec = { dep_spec }
-        end
-        local dep = self:add(dep_spec)
-        if dep then
-            plugin._deps = plugin._deps or {}
-            plugin._deps[dep.name] = true
-            dep._is_dep = true
+    if spec.dependencies then
+        plugin._deps = plugin._deps or {}
+        for _, dep_spec in ipairs(spec.dependencies) do
+            local dep_name
+            if type(dep_spec) == "string" then
+                dep_name = dep_spec
+            else
+                local dep = self:add(dep_spec)
+                if not dep then
+                    error("dependency spec is not a valid plugin: " .. vim.inspect(dep_spec))
+                end
+                dep._is_dep = true
+                dep_name = dep.name
+            end
+            plugin._deps[dep_name] = true
         end
     end
 
@@ -178,34 +184,36 @@ function Manager:setup()
 end
 
 function Manager:_really_setup()
-    local idx = 1
-    local plugins = self._plugins
-    while idx <= #plugins do
+    local count = 1
+    while count <= #self._plugins do
         -- Collect and sort start plugins so as to ensure they are loaded in the
         -- desired order.
-        local starts = {} ---@type MeoPlugin[]
+        local enabled_plugins = {} ---@type MeoPlugin[]
         repeat
-            local plugin = plugins[idx]
-            idx = idx + 1
-
+            local plugin = self._plugins[count]
+            count = count + 1
             if plugin._state ~= PluginState.NONE then
             elseif plugin:is_disabled() then
                 plugin._state = PluginState.DISABLED
-            elseif plugin:is_lazy() then
+            else
+                table.insert(enabled_plugins, plugin)
+            end
+        until count > #self._plugins
+
+        table.sort(enabled_plugins, plugin_ordering)
+        for _, plugin in ipairs(enabled_plugins) do
+            if plugin:is_lazy() then
                 MiniDeps.later(function()
                     -- TODO: set up event handlers
                     self:_load(plugin)
                 end)
             else
-                table.insert(starts, plugin)
-            end
-        until idx > #plugins
-
-        table.sort(starts, plugin_ordering)
-        for _, plugin in ipairs(starts) do
-            self:_load(plugin)
-            for _, mod in ipairs(plugin.imports or {}) do
-                self:import(mod)
+                self:_load(plugin)
+                if plugin.imports then
+                    for _, mod in ipairs(plugin.imports) do
+                        self:import(mod)
+                    end
+                end
             end
         end
     end
@@ -259,26 +267,30 @@ end
 ---@param result MeoPlugin[]
 ---@param plugin MeoPlugin
 function Manager:_collect_dependencies(result, plugin)
-    plugin._level = -1 -- Set a temporary mark to detect circular references.
-
-    local dep_level = 0
-    for dep_name, _ in pairs(plugin._deps or {}) do
-        local dep = self._plugin_map[dep_name]
-        if not dep then
-            error(("found undefined dependency: %s"):format(dep_name))
-        end
-        if dep._level == -1 then
-            error(("found circular dependencies: %s and %s"):format(plugin.name, dep_name))
-        end
-
-        -- Skip a resolved or loaded dependency.
-        if dep._level == 0 and dep._state < PluginState.LOADING then
-            self:_collect_dependencies(result, dep)
-            dep_level = math.max(dep_level, dep._level)
-        end
+    -- Skip if resolved or loaded.
+    if plugin._level ~= 0 or plugin._level >= PluginState.LOADING then
+        return
     end
 
-    plugin._level = dep_level + 1
+    if not plugin._deps then
+        plugin._level = 1
+    else
+        plugin._level = -1 -- Set a temporary mark to detect circular references.
+        local dep_level = 0
+        for dep_name, _ in pairs(plugin._deps) do
+            local dep = self._plugin_map[dep_name]
+            if not dep then
+                error(("found undefined dependency: %s"):format(dep_name))
+            elseif dep._level == -1 then
+                error(("found circular dependencies: %s and %s"):format(plugin.name, dep_name))
+            else
+                self:_collect_dependencies(result, dep)
+                dep_level = math.max(dep_level, dep._level)
+            end
+        end
+        plugin._level = dep_level + 1
+    end
+
     table.insert(result, plugin)
 end
 
