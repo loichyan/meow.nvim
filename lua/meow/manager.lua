@@ -43,7 +43,7 @@ end
 ---@field private _plugins MeoPlugin[]
 ---A map of all plugins, indexed by their names.
 ---@field private _plugin_map table<string,MeoPlugin>
----@field private _did_setup boolean?
+---@field private _did_setup? boolean
 local Manager = {}
 
 ---Creates a new plugin manager.
@@ -67,7 +67,8 @@ end
 ---A module may return a plugin spec or a list of plugin specs.
 ---@param root string
 function Manager:import(root)
-    local mods = {} ---@type string[]
+    ---@type string[]
+    local mods = {}
     Utils.scan_submods(root, function(mod, path)
         if package.preload[mod] == nil then
             package.preload[mod] = function()
@@ -188,7 +189,8 @@ function Manager:_really_setup()
     while count <= #self._plugins do
         -- Collect and sort start plugins so as to ensure they are loaded in the
         -- desired order.
-        local enabled_plugins = {} ---@type MeoPlugin[]
+        ---@type MeoPlugin[]
+        local enabled_plugins = {}
         repeat
             local plugin = self._plugins[count]
             count = count + 1

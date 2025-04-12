@@ -1,5 +1,5 @@
 ---@class MeoOptions
----@field specs MeoSpecs?
+---@field specs? MeoSpecs
 
 local Config = {}
 

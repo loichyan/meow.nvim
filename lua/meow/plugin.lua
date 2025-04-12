@@ -34,20 +34,20 @@ end
 
 ---@class MeoPlugin
 ---@field name string
----@field source string?
----@field checkout string?
----@field monitor string?
----@field hooks MeoSpecHooks?
----@field shadow MeoSpecCond?
----@field disabled MeoSpecCond?
----@field lazy MeoSpecCond?
+---@field source? string
+---@field checkout? string
+---@field monitor? string
+---@field hooks? MeoSpecHooks
+---@field shadow? MeoSpecCond
+---@field disabled? MeoSpecCond
+---@field lazy? MeoSpecCond
 ---@field priority integer
 ---@field config fun(self:MeoPlugin)|nil
----@field imports string[]?
+---@field imports? string[]
 ---Whether added as a dependency.
----@field private _is_dep boolean?
+---@field private _is_dep? boolean
 ---A set of dependency names.
----@field private _deps table<string,true>?
+---@field private _deps? table<string,true>
 ---The level of this plugin in the dependency graph of a resolved plugin.
 ---@field private _level integer
 ---The loading state of this plugin.

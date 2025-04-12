@@ -7,55 +7,55 @@
 ---
 ---The URI to the plugin source can be specified, of which the basename is set
 ---to the plugin's name.
----@field [1] string?
+---@field [1]? string
 ---The URI to the plugin source.
----@field source string?
+---@field source? string
 ---The checkout target after the source is cloned.
----@field checkout string?
+---@field checkout? string
 ---The branch used to track new changes.
----@field monitor string?
+---@field monitor? string
 ---Hooks invoked on certain events.
----@field hooks MeoSpecHooks?
+---@field hooks? MeoSpecHooks
 ---An alias of `hooks.post_checkout`.
----@field build MeoSpecHook?
+---@field build? MeoSpecHook
 ---Whether to make this plugin "shadow" other plugins.
 ---
 ---A shadow plugin is not added to MiniDeps and exists only to perform the setup
 ---function on the configured events. This is especially useful for setting up
 ---different mini modules independently. By default, any mini plugin (determined
 ---by a name starting with "mini.") automatically becomes a shadow plugin.
----@field shadow MeoSpecCond?
+---@field shadow? MeoSpecCond
 ---Whether to disable this plugin. The default is false. Disabled plugins will
 ---not be added to MiniDeps and will therefore be cleaned up.
----@field disabled MeoSpecCond?
+---@field disabled? MeoSpecCond
 ---Whether to lazily load this plugin. The default is true only if an event
 ---handler is set or it is added as a dependency.
----@field lazy MeoSpecCond?
+---@field lazy? MeoSpecCond
 ---A integer used to manuallly adjust the loading order.
 ---
 ---Plugins with a lower priority are loaded first. The recommended range is
 ---*[0, 100]*, and the default value is set to 50.
----@field priority integer?
+---@field priority? integer
 ---The function used to set up this plugin after loading.
----@field config fun(self:MeoPlugin)|nil
+---@field config? fun(self:MeoPlugin)
 ---A list of plugins that should be loaded before this.
 ---
 ---For convenience, a plugin spec, which is ALWAYS merged into existing specs,
 ---can be specified instead of its name.
----@field dependencies (string|MeoSpec)[]?
+---@field dependencies? (string|MeoSpec)[]
 ---A list of module paths to load additional specs.
 ---
 ---All the direct modules under the given paths are imported. Every module must
 ---return a plugin spec or a list of plugin specs.
----@field imports string[]?
+---@field imports? string[]
 
 ---@alias MeoSpecCond boolean|fun(self:MeoPlugin):boolean
 
 ---@class MeoSpecHooks
----@field pre_install   MeoSpecHook? - Before creating the plugin directory.
----@field post_install  MeoSpecHook? - After creating the plugin directory.
----@field pre_checkout  MeoSpecHook? - Before making change in the source.
----@field post_checkout MeoSpecHook? - After making change in the source.
+---@field pre_install?   MeoSpecHook - Before creating the plugin directory.
+---@field post_install?  MeoSpecHook - After creating the plugin directory.
+---@field pre_checkout?  MeoSpecHook - Before making change in the source.
+---@field post_checkout? MeoSpecHook - After making change in the source.
 
 ---@alias MeoSpecHook fun(args:MeoSpecHookArgs)
 

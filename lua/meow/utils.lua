@@ -1,3 +1,15 @@
+---@class MeoKeySpec
+---@field [1] string - lhs
+---@field [2] string|fun() - rhs
+---@field mode? string|string[]
+---@field buffer? integer
+---@field desc? string
+---@field expr? boolean
+---@field noremap? boolean
+---@field nowait? boolean
+---@field remap? boolean
+---@field silent? boolean
+
 ---@class MeoUtils
 local Utils = {}
 
@@ -42,7 +54,8 @@ function Utils.scan_dirmods(dir, cb)
         if not name then
             break
         end
-        local path = dir .. "/" .. name ---@type string?
+        ---@type string?
+        local path = dir .. "/" .. name
 
         if name:find(".+%.lua$") then
             name = name:sub(1, -5)
@@ -67,6 +80,26 @@ function Utils.parse_plugin_name(str)
         return str, nil
     else
         return basename, str
+    end
+end
+
+---Sets Neovim keymaps using delcarative key tables.
+---@overload fun(specs:MeoKeySpec[])
+---@overload fun(bufnr:integer,specs:MeoKeySpec[])
+function Utils.keyset(bufnr, specs)
+    if specs == nil then
+        specs = bufnr
+        bufnr = nil
+    end
+    ---@cast bufnr integer?
+    ---@cast specs MeoKeySpec[]
+
+    for _, spec in ipairs(specs) do
+        local opts = vim.tbl_extend("keep", spec, { buffer = bufnr })
+        local lhs, rhs, mode = opts[1], opts[2], opts.mode
+        opts[1], opts[2], opts.mode = nil, nil, nil
+        mode = mode or "n"
+        vim.keymap.set(mode, lhs, rhs, opts)
     end
 end
 
