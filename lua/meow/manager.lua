@@ -205,6 +205,9 @@ function Manager:_really_setup()
         table.sort(enabled_plugins, plugin_ordering)
         for _, plugin in ipairs(enabled_plugins) do
             if plugin:is_lazy() then
+                if plugin.imports then
+                    error("imports of lazy plugins are not supported: " .. plugin.name)
+                end
                 MiniDeps.later(function()
                     -- TODO: set up event handlers
                     self:_load(plugin)
