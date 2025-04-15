@@ -44,6 +44,8 @@ end
 ---@field priority integer
 ---@field config fun(self:MeoPlugin)|nil
 ---@field imports? string[]
+---The installation location of this plugin.
+---@field path string
 ---Whether added as a dependency.
 ---@field private _is_dep? boolean
 ---A set of dependency names.
@@ -61,6 +63,7 @@ function Plugin.new(name)
     return setmetatable({
         name = name,
         priority = 50,
+        path = vim.fs.normalize(MiniDeps.config.path.package .. "/pack/deps/opt/" .. name),
         _level = 0,
         _state = 0,
     }, { __index = Plugin })

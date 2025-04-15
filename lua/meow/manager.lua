@@ -180,23 +180,26 @@ end
 ---CAVEAT: This function may only be called once, after which no modifications
 ---may be made to the instance or any added plugins.
 function Manager:setup()
-    if self._did_setup then
-        vim.notify("PluginManager has been initialized", vim.log.levels.WARN)
-        return
-    end
     MiniDeps.now(function()
+        if self._did_setup then
+            vim.notify("PluginManager has been initialized", vim.log.levels.WARN)
+            return
+        end
         self:_really_setup()
-    end)
-    self._did_setup = true
 
-    local freezed = function()
-        error("PluginManager has been initialized and freezed")
-    end
-    setmetatable(self._plugins, { __newindex = freezed })
-    setmetatable(self._plugin_map, { __newindex = freezed })
+        local freezed = function()
+            error("PluginManager has been freezed")
+        end
+        setmetatable(self._plugins, { __newindex = freezed })
+        setmetatable(self._plugin_map, { __newindex = freezed })
+
+        self._did_setup = true
+    end)
 end
 
 function Manager:_really_setup()
+    local handler = require("meow.handler").new(self)
+
     local count = 1
     while count <= #self._plugins do
         -- Collect and sort start plugins so as to ensure they are loaded in the
@@ -216,9 +219,10 @@ function Manager:_really_setup()
                         vim.log.levels.ERROR
                     )
                 end
+                -- TODO: set up event handlers
+                handler:add(plugin)
                 MiniDeps.later(function()
-                    -- TODO: set up event handlers
-                    self:_load(plugin)
+                    self:load(plugin)
                 end)
             else
                 table.insert(enabled_plugins, plugin)
@@ -227,7 +231,7 @@ function Manager:_really_setup()
 
         table.sort(enabled_plugins, plugin_ordering)
         for _, plugin in ipairs(enabled_plugins) do
-            self:_load(plugin)
+            self:load(plugin)
             if plugin.imports then
                 for _, mod in ipairs(plugin.imports) do
                     self:import(mod)
@@ -235,11 +239,13 @@ function Manager:_really_setup()
             end
         end
     end
+
+    handler:setup()
 end
 
 ---Loads a plugin if it is not loaded or disabled.
 ---@param plugin MeoPlugin
-function Manager:_load(plugin)
+function Manager:load(plugin)
     if plugin._state >= PluginState.LOADING then
         return
     end
@@ -258,10 +264,12 @@ end
 ---@private
 ---@param plugin MeoPlugin
 function Manager:_activate(plugin)
-    if plugin:is_shadow() or plugin._state >= PluginState.ACTIVATED then
+    if plugin._state >= PluginState.ACTIVATED then
         return
     end
-    MiniDeps.add(plugin:to_mini())
+    if not plugin:is_shadow() then
+        MiniDeps.add(plugin:to_mini())
+    end
     plugin._state = PluginState.ACTIVATED
 end
 
@@ -312,6 +320,7 @@ function Manager:_collect_dependencies(result, plugin)
     table.insert(result, plugin)
 end
 
+-- TODO: migrate to mini.test
 function Manager.test_add_plugin()
     MiniDeps = {
         add = function(p)
@@ -335,9 +344,9 @@ function Manager.test_add_plugin()
         end,
     })
     vim.print("LOAD(A)")
-    m:_load(m:get("a"))
+    m:load(m:get("a"))
     vim.print("LOAD(F)")
-    m:_load(m:get("f"))
+    m:load(m:get("f"))
 end
 
 return Manager

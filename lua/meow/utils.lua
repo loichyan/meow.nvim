@@ -21,19 +21,16 @@ local Utils = {}
 ---@param cb fun(mod:string,path:string)
 function Utils.scan_submods(root, cb)
     local rootdir = string.gsub(root, "%.", "/")
-    local rootpath
     for _, rtp in ipairs(vim.api.nvim_list_runtime_paths()) do
         local dir = rtp .. "/lua/" .. rootdir
         if vim.uv.fs_stat(dir .. ".lua") then
-            rootpath = dir .. ".lua"
-            cb(root, rootpath)
+            cb(root, dir .. ".lua")
         end
-        Utils.scan_dirmods(dir, function(mod, path)
-            if mod ~= "init" then
+        Utils.scan_dirmods(dir, false, function(mod, path)
+            if mod == "init" then
+                cb(root, path)
+            else
                 cb(root .. "." .. mod, path)
-            elseif not rootpath then
-                rootpath = path
-                cb(root, rootpath)
             end
         end)
     end
@@ -43,8 +40,9 @@ end
 ---
 ---It accepts a callback function that takes the name and path of a module.
 ---@param dir string
+---@param allow_empty boolean whether to return empty directory modules
 ---@param cb fun(mod:string,path:string)
-function Utils.scan_dirmods(dir, cb)
+function Utils.scan_dirmods(dir, allow_empty, cb)
     local f = vim.uv.fs_scandir(dir)
     if not f then
         return
@@ -59,7 +57,7 @@ function Utils.scan_dirmods(dir, cb)
 
         if name:find(".+%.lua$") then
             name = name:sub(1, -5)
-        elseif type == "directory" and vim.uv.fs_stat(path .. "/init.lua") then
+        elseif type == "directory" and (allow_empty or vim.uv.fs_stat(path .. "/init.lua")) then
             path = path .. "/init.lua"
         else
             path = nil
