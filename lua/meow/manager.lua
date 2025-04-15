@@ -62,6 +62,12 @@ function Manager:get(name)
     return self._plugin_map[name]
 end
 
+---Returns all registered plugins. The returned table MUST NOT be modified.
+---@return MeoPlugin[]
+function Manager:plugins()
+    return self._plugins
+end
+
 ---Imports all plugin specs from the direct submodules under the root module.
 ---
 ---A module may return a plugin spec or a list of plugin specs.
@@ -175,13 +181,19 @@ end
 ---may be made to the instance or any added plugins.
 function Manager:setup()
     if self._did_setup then
-        vim.notify("PluginManager has already been initialized", vim.log.levels.WARN)
+        vim.notify("PluginManager has been initialized", vim.log.levels.WARN)
         return
     end
     MiniDeps.now(function()
         self:_really_setup()
     end)
     self._did_setup = true
+
+    local freezed = function()
+        error("PluginManager has been initialized and freezed")
+    end
+    setmetatable(self._plugins, { __newindex = freezed })
+    setmetatable(self._plugin_map, { __newindex = freezed })
 end
 
 function Manager:_really_setup()
@@ -197,6 +209,17 @@ function Manager:_really_setup()
             if plugin._state ~= PluginState.NONE then
             elseif plugin:is_disabled() then
                 plugin._state = PluginState.DISABLED
+            elseif plugin:is_lazy() then
+                if plugin.imports then
+                    vim.notify(
+                        "imports of lazy plugins are not supported: " .. plugin.name,
+                        vim.log.levels.ERROR
+                    )
+                end
+                MiniDeps.later(function()
+                    -- TODO: set up event handlers
+                    self:_load(plugin)
+                end)
             else
                 table.insert(enabled_plugins, plugin)
             end
@@ -204,20 +227,10 @@ function Manager:_really_setup()
 
         table.sort(enabled_plugins, plugin_ordering)
         for _, plugin in ipairs(enabled_plugins) do
-            if plugin:is_lazy() then
-                if plugin.imports then
-                    error("imports of lazy plugins are not supported: " .. plugin.name)
-                end
-                MiniDeps.later(function()
-                    -- TODO: set up event handlers
-                    self:_load(plugin)
-                end)
-            else
-                self:_load(plugin)
-                if plugin.imports then
-                    for _, mod in ipairs(plugin.imports) do
-                        self:import(mod)
-                    end
+            self:_load(plugin)
+            if plugin.imports then
+                for _, mod in ipairs(plugin.imports) do
+                    self:import(mod)
                 end
             end
         end
