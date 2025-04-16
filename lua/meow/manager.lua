@@ -18,9 +18,21 @@ local plugin_ordering = function(a, b)
         return a._level < b._level
     end
     if a.priority ~= b.priority then
-        return a.priority < b.priority
+        return a.priority > b.priority
     end
     return a.name < b.name
+end
+
+---Parses the spec name and possible source URI from the given string.
+---@param str string
+---@return string,string?
+local parse_plugin_name = function(str)
+    local basename = string.match(str, ".*/(.*)")
+    if not basename then
+        return str, nil
+    else
+        return basename, str
+    end
 end
 
 ---@class MeoPluginManager
@@ -110,18 +122,22 @@ end
 ---@return MeoPlugin?
 function Manager:add(spec)
     if not spec[1] then
-        -- If the spec contains only an imports field, resolve the imports
+        -- If the spec contains only an import field, resolve the import
         -- immediately; otherwise, defer the resolution after this plugin is
         -- activated.
-        if spec.imports then
-            for _, mod in ipairs(spec.imports) do
+        if spec.import then
+            local mods = spec.import
+            if type(mods) ~= "table" then
+                mods = { mods }
+            end
+            for _, mod in ipairs(mods) do
                 self:import(mod)
             end
         end
         return
     end
 
-    local name, source = Utils.parse_plugin_name(spec[1])
+    local name, source = parse_plugin_name(spec[1])
     local plugin = self._plugin_map[name]
     if not plugin then
         plugin = Plugin.new(name)
@@ -197,7 +213,7 @@ function Manager:_really_setup()
             local plugin = self._plugins[visited]
             visited = visited + 1
             if plugin._state ~= PluginState.NONE then
-            elseif plugin:is_disabled() then
+            elseif not plugin:is_enabled() then
                 plugin._state = PluginState.DISABLED
             else
                 if plugin.init then
@@ -214,8 +230,8 @@ function Manager:_really_setup()
         table.sort(start_plugin, plugin_ordering)
         for _, plugin in ipairs(start_plugin) do
             self:load(plugin)
-            if plugin.imports then
-                for _, mod in ipairs(plugin.imports) do
+            if plugin.import then
+                for _, mod in ipairs(plugin.import) do
                     self:import(mod)
                 end
             end
@@ -223,7 +239,7 @@ function Manager:_really_setup()
     end
 
     for _, plugin in ipairs(opt_plugins) do
-        if plugin.imports then
+        if plugin.import then
             vim.notify(
                 "imports of lazy plugins are not supported: " .. plugin.name,
                 vim.log.levels.ERROR

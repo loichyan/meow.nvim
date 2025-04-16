@@ -25,15 +25,15 @@
 ---different mini modules independently. By default, any mini plugin (determined
 ---by a name starting with "mini.") automatically becomes a shadow plugin.
 ---@field shadow? MeoSpecCond
----Whether to disable this plugin. The default is false. Disabled plugins will
----not be added to MiniDeps and will therefore be cleaned up.
----@field disabled? MeoSpecCond
+---Whether to enable this plugin. The default is true. Disabled plugins will not
+---be added to MiniDeps and will therefore be cleaned up.
+---@field enabled? MeoSpecCond
 ---Whether to lazily load this plugin. The default is true only if an event
 ---handler is set or it is added as a dependency.
 ---@field lazy? MeoSpecCond
 ---A integer used to manuallly adjust the loading order.
 ---
----Plugins with a lower priority are loaded first. The recommended range is
+---Plugins with a higher priority are loaded first. The recommended range is
 ---*[0, 100]*, and the default value is set to 50.
 ---@field priority? integer
 ---The function used to set up additional initializations.
@@ -52,8 +52,9 @@
 ---
 ---All the direct modules under the given paths are imported. Every module must
 ---return a plugin spec or a list of plugin specs.
----@field imports? string[]
+---@field import? MeoSpecStrList
 
+---@alias MeoSpecStrList string|string[]
 ---@alias MeoSpecCond boolean|fun(self:MeoPlugin):boolean
 
 ---@class MeoSpecHooks

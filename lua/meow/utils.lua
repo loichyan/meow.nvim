@@ -69,18 +69,6 @@ function Utils.scan_dirmods(dir, allow_empty, cb)
     end
 end
 
----Parses the spec name and possible source URI from the given string.
----@param str string
----@return string,string?
-function Utils.parse_plugin_name(str)
-    local basename = string.match(str, ".*/(.*)")
-    if not basename then
-        return str, nil
-    else
-        return basename, str
-    end
-end
-
 ---Sets Neovim keymaps using delcarative key tables.
 ---@overload fun(specs:MeoKeySpec[])
 ---@overload fun(bufnr:integer,specs:MeoKeySpec[])

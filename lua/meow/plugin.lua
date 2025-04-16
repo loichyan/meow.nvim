@@ -23,14 +23,14 @@ local SPEC_VTYPES = {
     checkout = "primitive",
     monitor = "primitive",
     shadow = "primitive",
-    disabled = "primitive",
+    enabled = "primitive",
     lazy = "primitive",
     priority = "primitive",
     init = "primitive",
     config = "primitive",
 
     hooks = "table",
-    imports = "list",
+    import = "list",
 }
 ---@type string[]
 local MINI_SPEC_KEYS = {
@@ -58,12 +58,12 @@ end
 ---@field monitor? string
 ---@field hooks? MeoSpecHooks
 ---@field shadow? MeoSpecCond
----@field disabled? MeoSpecCond
+---@field enabled? MeoSpecCond
 ---@field lazy? MeoSpecCond
 ---@field priority integer
 ---@field init fun(self:MeoPlugin)|nil
 ---@field config fun(self:MeoPlugin)|nil
----@field imports? string[]
+---@field import? string[]
 ---The installation location of this plugin.
 ---@field path string
 ---Whether added as a dependency.
@@ -101,6 +101,9 @@ function Plugin:_update_spec(spec)
         local vtype = SPEC_VTYPES[key]
         if not vtype then
         elseif vtype == "list" then
+            if type(val) ~= "table" then
+                val = { val }
+            end
             self[key] = vim.list_extend(self[key] or {}, val)
         elseif vtype == "table" then
             self[key] = vim.tbl_extend("force", self[key] or {}, val)
@@ -128,8 +131,8 @@ function Plugin:is_shadow()
 end
 
 ---@return boolean
-function Plugin:is_disabled()
-    return self:_get_cond("disabled", false)
+function Plugin:is_enabled()
+    return self:_get_cond("enabled", true)
 end
 
 function Plugin:is_lazy()
@@ -137,7 +140,7 @@ function Plugin:is_lazy()
 end
 
 ---Resolves the specified conditional field.
----@param key "shadow"|"disabled"|"lazy"
+---@param key "shadow"|"enabled"|"lazy"
 ---@param default MeoSpecCond
 ---@return boolean
 function Plugin:_get_cond(key, default)
