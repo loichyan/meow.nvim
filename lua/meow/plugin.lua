@@ -22,14 +22,19 @@ local SPEC_VTYPES = {
     source = "primitive",
     checkout = "primitive",
     monitor = "primitive",
+    hooks = "table",
+
     shadow = "primitive",
     enabled = "primitive",
-    lazy = "primitive",
     priority = "primitive",
+
+    lazy = "primitive",
+    event = "list",
+    module = "list",
+
     init = "primitive",
     config = "primitive",
 
-    hooks = "table",
     import = "list",
 }
 ---@type string[]
@@ -48,7 +53,7 @@ end
 
 ---@type MeoSpecCond
 local infer_lazy_state = function(plugin)
-    return plugin._is_dep == true
+    return not not (plugin._is_dep or plugin.event or plugin.module)
 end
 
 ---@class MeoPlugin
@@ -59,8 +64,10 @@ end
 ---@field hooks? MeoSpecHooks
 ---@field shadow? MeoSpecCond
 ---@field enabled? MeoSpecCond
----@field lazy? MeoSpecCond
 ---@field priority integer
+---@field lazy? MeoSpecCond
+---@field event? string[]
+---@field module? string[]
 ---@field init fun(self:MeoPlugin)|nil
 ---@field config fun(self:MeoPlugin)|nil
 ---@field import? string[]

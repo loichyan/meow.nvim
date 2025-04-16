@@ -28,14 +28,29 @@
 ---Whether to enable this plugin. The default is true. Disabled plugins will not
 ---be added to MiniDeps and will therefore be cleaned up.
 ---@field enabled? MeoSpecCond
----Whether to lazily load this plugin. The default is true only if an event
----handler is set or it is added as a dependency.
----@field lazy? MeoSpecCond
 ---A integer used to manuallly adjust the loading order.
 ---
 ---Plugins with a higher priority are loaded first. The recommended range is
 ---*[0, 100]*, and the default value is set to 50.
 ---@field priority? integer
+---Whether to lazily load this plugin. The default is true only if an event
+---handler is set or it is added as a dependency.
+---
+---A plugin can be explicitly set to be lazy without any event handlers, as
+---every plugin will be loaded when it is `require`d. However, the plugin will
+---not be added to mini.deps until it is loaded, so updating or cleaning may not
+---work properly.
+---@field lazy? MeoSpecCond
+---Events to trigger lazy-loading.
+---
+---This field is mainly used to match the spec of lazy.nvim. Currently only
+---`VeryLazy` is supported, which essentially makes the plugin be loaded with
+---`MiniDeps.later`.
+---@field event? MeoSpecStrList
+---Manually specify the modules to trigger the lazy-loading on requiring.
+---
+---By default, all modules and directories under `<plugin_path>/lua/` are used.
+---@field module? MeoSpecStrList
 ---The function used to set up additional initializations.
 ---
 ---Note this function is always invoked BEFORE the plugin is loaded, which means

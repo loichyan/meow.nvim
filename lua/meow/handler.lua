@@ -15,12 +15,32 @@ end
 
 ---@param plugin MeoPlugin
 function Handler:add(plugin)
-    -- Find which plugins should be loaded before a module is required.
-    Utils.scan_dirmods(plugin.path .. "/lua", true, function(mod)
+    -- Lazy-loading on requiring.
+    if not plugin.module then
+        -- Find modules to trigger the loading of the given plugin.
+        plugin.module = {}
+        Utils.scan_dirmods(plugin.path .. "/lua", true, function(mod)
+            table.insert(plugin.module, mod)
+        end)
+    end
+    for _, mod in ipairs(plugin.module) do
         local mods = self._module_map[mod] or {}
         self._module_map[mod] = mods
         table.insert(mods, plugin)
-    end)
+    end
+
+    -- Lazy-loading on events.
+    if plugin.event then
+        for _, e in ipairs(plugin.event) do
+            if e ~= "VeryLazy" then
+                vim.notify(
+                    ("event %s is not supported for plugin %s"):format(e, plugin.name),
+                    vim.log.levels.ERROR
+                )
+            end
+        end
+    end
+
     MiniDeps.later(function()
         self._manager:load(plugin)
     end)
@@ -37,6 +57,9 @@ function Handler:setup()
             end
             self._module_map[root] = nil
         end
+    end)
+    MiniDeps.later(function()
+        vim.api.nvim_exec_autocmds("User", { pattern = "VeryLazy" })
     end)
 end
 
