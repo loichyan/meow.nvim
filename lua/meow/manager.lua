@@ -2,22 +2,7 @@
 
 local Utils = require("meow.utils")
 local Plugin = require("meow.plugin")
-
----Denotes whether a plugin is activated or loaded.
----
----Possible values are:
----  * ACTIVATED : Added to MiniDeps, but not loaded.
----  * LOADING   : In the loading progress.
----  * LOADED    : Loaded and initialized.
----  * DISABLED  : Disabled and never to be loaded.
----@enum MeoPluginState
-local PluginState = {
-    NONE = 0,
-    ACTIVATED = 1,
-    LOADING = 2,
-    LOADED = 3,
-    DISABLED = 4,
-}
+local PluginState = Plugin._State
 
 ---Returns true if plugin `a` should be loaded before plugin `b`.
 ---

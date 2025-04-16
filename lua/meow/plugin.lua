@@ -1,5 +1,22 @@
 ---@diagnostic disable: invisible
 
+---Denotes whether a plugin is activated or loaded.
+---
+---Possible values are:
+---  * ACTIVATED : Added to MiniDeps, but not loaded.
+---  * LOADING   : In the loading progress.
+---  * LOADED    : Loaded and initialized.
+---  * DISABLED  : Disabled and never to be loaded.
+---@private
+---@enum MeoPluginState
+local PluginState = {
+    NONE = 0,
+    ACTIVATED = 1,
+    LOADING = 2,
+    LOADED = 3,
+    DISABLED = 4,
+}
+
 ---@type table<string,"primitive"|"list"|"table">
 local SPEC_VTYPES = {
     source = "primitive",
@@ -14,6 +31,7 @@ local SPEC_VTYPES = {
     hooks = "table",
     imports = "list",
 }
+---@type string[]
 local MINI_SPEC_KEYS = {
     "name",
     "source",
@@ -56,6 +74,9 @@ end
 ---@field private _state MeoPluginState
 local Plugin = {}
 
+---@private
+Plugin._State = PluginState
+
 ---Creates a new plugin instance.
 ---@param name string
 ---@return MeoPlugin
@@ -65,7 +86,7 @@ function Plugin.new(name)
         priority = 50,
         path = vim.fs.normalize(MiniDeps.config.path.package .. "/pack/deps/opt/" .. name),
         _level = 0,
-        _state = 0,
+        _state = PluginState.NONE,
     }, { __index = Plugin })
 end
 
@@ -93,6 +114,12 @@ function Plugin:_update_spec(spec)
     end
 end
 
+---Returns whether this plugin is loaded.
+---@return boolean
+function Plugin:is_loaded()
+    return self._state == PluginState.LOADING
+end
+
 ---@return boolean
 function Plugin:is_shadow()
     return self:_get_cond("shadow", infer_shadow_state)
@@ -112,12 +139,17 @@ end
 ---@param default MeoSpecCond
 ---@return boolean
 function Plugin:_get_cond(key, default)
-    if self[key] == nil then
-        self[key] = default
+    local val = self[key]
+    if type(val) == "boolean" then
+        return val
     end
-    if type(self[key]) == "function" then
-        self[key] = self[key](self)
+    if val == nil then
+        val = default
     end
+    if type(val) == "function" then
+        val = val(self)
+    end
+    self[key] = not not val
     return self[key]
 end
 
