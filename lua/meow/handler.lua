@@ -21,6 +21,9 @@ function Handler:add(plugin)
         self._module_map[mod] = mods
         table.insert(mods, plugin)
     end)
+    MiniDeps.later(function()
+        self._manager:load(plugin)
+    end)
 end
 
 function Handler:setup()

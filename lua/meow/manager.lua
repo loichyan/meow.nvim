@@ -185,43 +185,58 @@ end
 function Manager:_really_setup()
     local handler = require("meow.handler").new(self)
 
-    local count = 1
-    while count <= #self._plugins do
+    ---@type MeoPlugin[]
+    local opt_plugins = {}
+    local visited = 1
+    while visited <= #self._plugins do
         -- Collect and sort start plugins so as to ensure they are loaded in the
         -- desired order.
         ---@type MeoPlugin[]
-        local enabled_plugins = {}
+        local start_plugin = {}
         repeat
-            local plugin = self._plugins[count]
-            count = count + 1
+            local plugin = self._plugins[visited]
+            visited = visited + 1
             if plugin._state ~= PluginState.NONE then
             elseif plugin:is_disabled() then
                 plugin._state = PluginState.DISABLED
-            elseif plugin:is_lazy() then
-                if plugin.imports then
-                    vim.notify(
-                        "imports of lazy plugins are not supported: " .. plugin.name,
-                        vim.log.levels.ERROR
-                    )
-                end
-                -- TODO: set up event handlers
-                handler:add(plugin)
-                MiniDeps.later(function()
-                    self:load(plugin)
-                end)
             else
-                table.insert(enabled_plugins, plugin)
+                if plugin.init then
+                    plugin:init()
+                end
+                if plugin:is_lazy() then
+                    table.insert(opt_plugins, plugin)
+                else
+                    table.insert(start_plugin, plugin)
+                end
             end
-        until count > #self._plugins
+        until visited > #self._plugins
 
-        table.sort(enabled_plugins, plugin_ordering)
-        for _, plugin in ipairs(enabled_plugins) do
+        table.sort(start_plugin, plugin_ordering)
+        for _, plugin in ipairs(start_plugin) do
             self:load(plugin)
             if plugin.imports then
                 for _, mod in ipairs(plugin.imports) do
                     self:import(mod)
                 end
             end
+        end
+    end
+
+    for _, plugin in ipairs(opt_plugins) do
+        if plugin.imports then
+            vim.notify(
+                "imports of lazy plugins are not supported: " .. plugin.name,
+                vim.log.levels.ERROR
+            )
+        end
+        if vim.loop.fs_stat(plugin.path) then
+            handler:add(plugin)
+        else
+            -- If a plugin is not installed, defer the setup of handlers until
+            MiniDeps.later(function()
+                self:_activate(plugin)
+                handler:add(plugin)
+            end)
         end
     end
 

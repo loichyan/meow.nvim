@@ -26,6 +26,7 @@ local SPEC_VTYPES = {
     disabled = "primitive",
     lazy = "primitive",
     priority = "primitive",
+    init = "primitive",
     config = "primitive",
 
     hooks = "table",
@@ -60,6 +61,7 @@ end
 ---@field disabled? MeoSpecCond
 ---@field lazy? MeoSpecCond
 ---@field priority integer
+---@field init fun(self:MeoPlugin)|nil
 ---@field config fun(self:MeoPlugin)|nil
 ---@field imports? string[]
 ---The installation location of this plugin.

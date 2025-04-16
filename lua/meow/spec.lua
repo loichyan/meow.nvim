@@ -36,6 +36,11 @@
 ---Plugins with a lower priority are loaded first. The recommended range is
 ---*[0, 100]*, and the default value is set to 50.
 ---@field priority? integer
+---The function used to set up additional initializations.
+---
+---Note this function is always invoked BEFORE the plugin is loaded, which means
+---the plugin cannot be `require`d during the execution.
+---@field init? fun(self:MeoPlugin)
 ---The function used to set up this plugin after loading.
 ---@field config? fun(self:MeoPlugin)
 ---A list of plugins that should be loaded before this.
