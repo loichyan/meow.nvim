@@ -181,21 +181,19 @@ end
 ---CAVEAT: This function may only be called once, after which no modifications
 ---may be made to the instance or any added plugins.
 function Manager:setup()
-    MiniDeps.now(function()
-        if self._did_setup then
-            vim.notify("PluginManager has been initialized", vim.log.levels.WARN)
-            return
-        end
-        self:_really_setup()
+    if self._did_setup then
+        Utils.notify("WARN", "PluginManager has been initialized")
+        return
+    end
+    self:_really_setup()
 
-        local freezed = function()
-            error("PluginManager has been freezed")
-        end
-        setmetatable(self._plugins, { __newindex = freezed })
-        setmetatable(self._plugin_map, { __newindex = freezed })
+    local freezed = function()
+        error("PluginManager has been freezed")
+    end
+    setmetatable(self._plugins, { __newindex = freezed })
+    setmetatable(self._plugin_map, { __newindex = freezed })
 
-        self._did_setup = true
-    end)
+    self._did_setup = true
 end
 
 function Manager:_really_setup()
@@ -240,10 +238,7 @@ function Manager:_really_setup()
 
     for _, plugin in ipairs(opt_plugins) do
         if plugin.import then
-            vim.notify(
-                "imports of lazy plugins are not supported: " .. plugin.name,
-                vim.log.levels.ERROR
-            )
+            Utils.notify("ERROR", "imports of lazy plugins are not supported: " .. plugin.name)
         end
         if vim.loop.fs_stat(plugin.path) then
             handler:add(plugin)

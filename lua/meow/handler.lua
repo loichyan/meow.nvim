@@ -33,10 +33,7 @@ function Handler:add(plugin)
     if plugin.event then
         for _, e in ipairs(plugin.event) do
             if e ~= "VeryLazy" then
-                vim.notify(
-                    ("event %s is not supported for plugin %s"):format(e, plugin.name),
-                    vim.log.levels.ERROR
-                )
+                Utils.notifyf("ERROR", "event %s is not supported for plugin %s", e, plugin.name)
             end
         end
     end
