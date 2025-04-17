@@ -38,7 +38,7 @@
 ---
 ---A plugin can be explicitly set to be lazy without any event handlers, as
 ---every plugin will be loaded when it is `require`d. However, the plugin will
----not be added to mini.deps until it is loaded, so updating or cleaning may not
+---not be added to MiniDeps until it is loaded, so updating or cleaning may not
 ---work properly.
 ---@field lazy? MeoSpecCond
 ---Events to trigger lazy-loading.
@@ -60,8 +60,8 @@
 ---@field config? fun(self:MeoPlugin)
 ---A list of plugins that should be loaded before this.
 ---
----For convenience, a plugin spec, which is ALWAYS merged into existing specs,
----can be specified instead of its name.
+---For convenience, a plugin spec, which is merged into existing specs if this
+---plugin is enabled, can be specified instead of a plugin name.
 ---@field dependencies? (string|MeoSpec)[]
 ---A list of module paths to load additional specs.
 ---

@@ -24,10 +24,39 @@ function Meow.setup(opts)
     Meow.config = opts
     Meow.manager = require("meow.manager").new()
 
+    -- Register ourself.
+    Meow.manager:add({ "meow.nvim", shadow = true, lazy = false, priority = math.huge })
     if opts.specs then
         Meow.manager:add_many(opts.specs)
     end
+    if opts.enable_snapshot then
+        Meow.manager:load_snap_from(MiniDeps.config.path.snapshot)
+    end
     Meow.manager:setup()
+
+    if opts.patch_mini then
+        local get_session = MiniDeps.get_session
+        ---@diagnostic disable-next-line: duplicate-set-field
+        MiniDeps.get_session = function(...)
+            Meow.manager:activate_all()
+            return get_session(...)
+        end
+    end
+end
+
+---Update plugins. See `:h MiniDeps.update()`.
+function Meow.update(...)
+    Meow.manager:activate_all()
+    MiniDeps.update(...)
+    if Meow.config.enable_snapshot then
+        MiniDeps.snap_save(MiniDeps.config.path.snapshot)
+    end
+end
+
+---Clean plugins. See `:h MiniDeps.clean()`.
+function Meow.clean(...)
+    Meow.manager:activate_all()
+    MiniDeps.clean(...)
 end
 
 return Meow

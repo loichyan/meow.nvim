@@ -35,6 +35,7 @@ local SPEC_VTYPES = {
     init = "primitive",
     config = "primitive",
 
+    dependencies = "list",
     import = "list",
 }
 ---@type string[]
@@ -70,6 +71,7 @@ end
 ---@field module? string[]
 ---@field init fun(self:MeoPlugin)|nil
 ---@field config fun(self:MeoPlugin)|nil
+---@field dependencies? (string|MeoSpec)[]
 ---@field import? string[]
 ---The installation location of this plugin.
 ---@field path string
@@ -165,7 +167,7 @@ function Plugin:_get_cond(key, default)
     return self[key]
 end
 
----Converts the given plugin to a spec acceptable to mini.deps.
+---Converts the given plugin to a spec acceptable to MiniDeps.
 ---@return table
 function Plugin:to_mini()
     local spec = {}
