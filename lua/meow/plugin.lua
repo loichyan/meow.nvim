@@ -79,6 +79,8 @@ end
 ---@field private _is_dep? boolean
 ---A set of dependency names.
 ---@field private _deps? table<string,true>
+---The registration index of this plugin.
+---@field private _idx integer
 ---The level of this plugin in the dependency graph of a resolved plugin.
 ---@field private _level integer
 ---The loading state of this plugin.

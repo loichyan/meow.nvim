@@ -6,10 +6,10 @@ local PluginState = Plugin._State
 
 ---Returns true if plugin `a` should be loaded before plugin `b`.
 ---
----Plugins with a lower level are always loaded first. Otherwise, if two plugins
----have the same level, the one with the lower priority is loaded first. If both
----the levels and the priorities are equal, their names are taken into account
----to produce a deterministic loading sequence.
+---Plugins with a higher level are always loaded first. Otherwise, if two
+---plugins have the same level, the one with the lower priority is loaded first.
+---If both the levels and the priorities are equal, their registration orders
+---are taken into account to produce a deterministic loading sequence.
 ---@param a MeoPlugin
 ---@param b MeoPlugin
 ---@return boolean
@@ -20,7 +20,7 @@ local plugin_ordering = function(a, b)
     if a.priority ~= b.priority then
         return a.priority > b.priority
     end
-    return a.name < b.name
+    return a._idx < b._idx
 end
 
 ---Parses the spec name and possible source URI from the given string.
@@ -166,6 +166,7 @@ function Manager:add(spec)
     local plugin = self._plugin_map[name]
     if not plugin then
         plugin = Plugin.new(name)
+        plugin._idx = #self._plugins
         table.insert(self._plugins, plugin)
         self._plugin_map[name] = plugin
     end
