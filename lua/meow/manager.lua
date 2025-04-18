@@ -261,6 +261,12 @@ function Manager:_really_setup()
             elseif not plugin:is_enabled() then
                 plugin._state = PluginState.DISABLED
             else
+                if not plugin:is_shadow() then
+                    plugin.path = vim.fs.normalize(
+                        MiniDeps.config.path.package .. "/pack/deps/opt/" .. plugin.name
+                    )
+                end
+
                 if plugin.init then
                     plugin:init()
                 end
@@ -293,7 +299,7 @@ function Manager:_really_setup()
             Utils.notify("ERROR", "imports of lazy plugins are not supported: " .. plugin.name)
         end
 
-        if vim.loop.fs_stat(plugin.path) then
+        if not plugin.path or vim.loop.fs_stat(plugin.path) then
             handler:add(plugin)
         else
             -- If a plugin is not installed, defer the setup of handlers.

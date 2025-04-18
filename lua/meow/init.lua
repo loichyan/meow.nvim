@@ -44,6 +44,16 @@ function Meow.setup(opts)
     end
 end
 
+---Loads the plugin specified by name.
+function Meow.load(name)
+    local plugin = Meow.manager:get(name)
+    if not plugin then
+        Utils.notify("ERROR", "attempted to load an undefined plugin " .. name)
+    else
+        Meow.manager:load(plugin)
+    end
+end
+
 ---Update plugins. See `:h MiniDeps.update()`.
 function Meow.update(...)
     Meow.manager:activate_all()

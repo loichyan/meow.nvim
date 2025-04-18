@@ -74,7 +74,7 @@ end
 ---@field dependencies? (string|MeoSpec)[]
 ---@field import? string[]
 ---The installation location of this plugin.
----@field path string
+---@field path? string
 ---Whether added as a dependency.
 ---@field private _is_dep? boolean
 ---A set of dependency names.
@@ -97,7 +97,6 @@ function Plugin.new(name)
     return setmetatable({
         name = name,
         priority = 50,
-        path = vim.fs.normalize(MiniDeps.config.path.package .. "/pack/deps/opt/" .. name),
         _level = 0,
         _state = PluginState.NONE,
     }, { __index = Plugin })
