@@ -34,6 +34,7 @@ function Handler:add(plugin)
     end
 
     -- Lazy-loading on events.
+    -- TODO: support more events
     if plugin.event then
         for _, e in ipairs(plugin.event) do
             if e ~= "VeryLazy" then

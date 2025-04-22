@@ -299,7 +299,7 @@ function Manager:_really_setup()
             Utils.notify("ERROR", "imports of lazy plugins are not supported: " .. plugin.name)
         end
 
-        if not plugin.path or vim.loop.fs_stat(plugin.path) then
+        if not plugin.path or vim.uv.fs_stat(plugin.path) then
             handler:add(plugin)
         else
             -- If a plugin is not installed, defer the setup of handlers.
