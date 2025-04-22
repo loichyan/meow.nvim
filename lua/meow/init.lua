@@ -25,7 +25,6 @@ function Meow.setup(opts)
     Meow.manager = require("meow.manager").new()
 
     -- Register ourself.
-    Meow.manager:add({ "meow.nvim", shadow = true, lazy = false, priority = math.huge })
     if opts.specs then
         Meow.manager:add_many(opts.specs)
     end

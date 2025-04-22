@@ -49,7 +49,7 @@ local MINI_SPEC_KEYS = {
 
 ---@type MeoSpecCond
 local infer_shadow_state = function(plugin)
-    return vim.startswith(plugin.name, "mini.")
+    return plugin.name ~= "mini.nvim" and vim.startswith(plugin.name, "mini.")
 end
 
 ---@type MeoSpecCond
