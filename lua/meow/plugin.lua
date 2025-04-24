@@ -30,6 +30,7 @@ local SPEC_VTYPES = {
 
     lazy = "primitive",
     event = "list",
+    ft = "list",
     module = "list",
 
     init = "primitive",
@@ -54,7 +55,7 @@ end
 
 ---@type MeoSpecCond
 local infer_lazy_state = function(plugin)
-    return not not (plugin._is_dep or plugin.event or plugin.module)
+    return not not (plugin._is_dep or plugin.event or plugin.ft or plugin.module)
 end
 
 ---@class MeoPlugin
@@ -68,6 +69,7 @@ end
 ---@field priority integer
 ---@field lazy? MeoSpecCond
 ---@field event? string[]
+---@field ft? string[]
 ---@field module? string[]
 ---@field init fun(self:MeoPlugin)|nil
 ---@field config fun(self:MeoPlugin)|nil

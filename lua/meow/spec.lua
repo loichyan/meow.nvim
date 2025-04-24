@@ -42,11 +42,9 @@
 ---work properly.
 ---@field lazy? MeoSpecCond
 ---Events to trigger lazy-loading.
----
----This field is mainly used to match the spec of lazy.nvim. Currently only
----`VeryLazy` is supported, which essentially makes the plugin be loaded with
----`MiniDeps.later`.
 ---@field event? MeoSpecStrList
+---Filetypes to trigger lazy-loading.
+---@field ft? MeoSpecStrList
 ---Manually specify the modules to trigger the lazy-loading on requiring.
 ---
 ---By default, all modules and directories under `<plugin_path>/lua/` are used.

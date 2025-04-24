@@ -36,6 +36,8 @@ local parse_plugin_name = function(str)
 end
 
 ---@class MeoPluginManager
+---Aliases of events.
+---@field event_aliases table<string,string[]>
 ---All registered plugins.
 ---@field private _plugins MeoPlugin[]
 ---A map of all plugins, indexed by their names.
@@ -49,6 +51,7 @@ local Manager = {}
 ---@return MeoPluginManager
 function Manager.new()
     return setmetatable({
+        event_aliases = {},
         _plugins = {},
         _plugin_map = {},
         _snapshot = {},
