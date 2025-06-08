@@ -327,7 +327,10 @@ function Manager:load(plugin)
         self:activate(dep)
         dep._state = PluginState.LOADING
         if dep.config then
-            dep:config()
+            local ok, err = pcall(dep.config, dep)
+            if not ok then
+                Utils.notifyf("ERROR", "failed to setup '%s': %s", dep.name, err)
+            end
         end
         dep._state = PluginState.LOADED
     end
