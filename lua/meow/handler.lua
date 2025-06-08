@@ -63,11 +63,7 @@ function Handler:setup()
             return
         end
 
-        local plugins = self._by_module[mod]
-        if not plugins then
-            mod = string.match(mod, "([^.]+)%.?")
-            plugins = self._by_module[mod]
-        end
+        local plugins = self._by_module[mod] or self._by_module[string.match(mod, "([^.]+)%.?")]
         if not plugins or plugins._loaded then
             return
         end
@@ -77,6 +73,14 @@ function Handler:setup()
         end
         plugins._loaded = true
         remaining_modules = remaining_modules - 1
+
+        -- The module may have been loaded during its setup.
+        local loaded = package.loaded[mod]
+        if loaded then
+            return function()
+                return loaded
+            end
+        end
     end)
 
     local group = vim.api.nvim_create_augroup("MeoEventHandler", { clear = false })
