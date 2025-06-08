@@ -2,9 +2,9 @@ local Utils = require("meow.utils")
 
 ---@class MeoEventHandler
 ---@field private _manager MeoPluginManager
----@field private _by_module table<string,MeoPlugin[]>
----@field private _by_event table<string,MeoPlugin[]>
----@field private _by_ft table<string,MeoPlugin[]>
+---@field private _by_module table<string,MeoPlugin[]|{_loaded:true}>
+---@field private _by_event table<string,MeoPlugin[]|{_loaded:true}>
+---@field private _by_ft table<string,MeoPlugin[]|{_loaded:true}>
 local Handler = {}
 
 ---@param manager MeoPluginManager
@@ -68,13 +68,15 @@ function Handler:setup()
             mod = string.match(mod, "([^.]+)%.?")
             plugins = self._by_module[mod]
         end
-        if plugins then
-            for _, plugin in ipairs(plugins) do
-                self._manager:load(plugin)
-            end
-            self._by_module[mod] = nil
-            remaining_modules = remaining_modules - 1
+        if not plugins or plugins._loaded then
+            return
         end
+
+        for _, plugin in ipairs(plugins) do
+            self._manager:load(plugin)
+        end
+        plugins._loaded = true
+        remaining_modules = remaining_modules - 1
     end)
 
     local group = vim.api.nvim_create_augroup("MeoEventHandler", { clear = false })
@@ -91,15 +93,13 @@ function Handler:setup()
                 once = true,
                 pattern = pattern,
                 callback = function()
-                    if not plugins then
+                    if plugins._loaded then
                         return
                     end
                     for _, plugin in ipairs(plugins) do
                         self._manager:load(plugin)
                     end
-                    ---@diagnostic disable-next-line: cast-local-type
-                    plugins = nil
-                    self._by_event[key] = nil
+                    plugins._loaded = true
                 end,
             })
         end
@@ -112,10 +112,13 @@ function Handler:setup()
             once = true,
             pattern = ft,
             callback = function()
+                if plugins._loaded then
+                    return
+                end
                 for _, plugin in ipairs(plugins) do
                     self._manager:load(plugin)
                 end
-                self._by_ft[ft] = nil
+                plugins._loaded = true
             end,
         })
     end
