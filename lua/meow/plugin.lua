@@ -133,23 +133,15 @@ end
 
 ---Returns whether this plugin is loaded.
 ---@return boolean
-function Plugin:is_loaded()
-    return self._state == PluginState.LOADING
-end
+function Plugin:is_loaded() return self._state == PluginState.LOADING end
 
 ---@return boolean
-function Plugin:is_shadow()
-    return self:_get_cond("shadow", infer_shadow_state)
-end
+function Plugin:is_shadow() return self:_get_cond("shadow", infer_shadow_state) end
 
 ---@return boolean
-function Plugin:is_enabled()
-    return self:_get_cond("enabled", true)
-end
+function Plugin:is_enabled() return self:_get_cond("enabled", true) end
 
-function Plugin:is_lazy()
-    return self:_get_cond("lazy", infer_lazy_state)
-end
+function Plugin:is_lazy() return self:_get_cond("lazy", infer_lazy_state) end
 
 ---Resolves the specified conditional field.
 ---@param key "shadow"|"enabled"|"lazy"

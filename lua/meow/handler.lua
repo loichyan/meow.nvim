@@ -24,9 +24,11 @@ function Handler:add(plugin)
         -- Find modules to trigger the loading of the given plugin.
         plugin.module = { plugin.name }
         if plugin.path then
-            Utils.scan_dirmods(plugin.path .. "/lua", true, function(mod)
-                table.insert(plugin.module, mod)
-            end)
+            Utils.scan_dirmods(
+                plugin.path .. "/lua",
+                true,
+                function(mod) table.insert(plugin.module, mod) end
+            )
         end
     end
     if plugin.module then
@@ -77,9 +79,7 @@ function Handler:setup()
         -- The module may have been loaded during its setup.
         local loaded = package.loaded[mod]
         if loaded then
-            return function()
-                return loaded
-            end
+            return function() return loaded end
         end
     end)
 

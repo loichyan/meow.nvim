@@ -61,15 +61,11 @@ end
 ---Returns the plugin specified by name.
 ---@param name string
 ---@return MeoPlugin?
-function Manager:get(name)
-    return self._plugin_map[name]
-end
+function Manager:get(name) return self._plugin_map[name] end
 
 ---Returns all registered plugins. The returned table MUST NOT be modified.
 ---@return MeoPlugin[]
-function Manager:plugins()
-    return self._plugins
-end
+function Manager:plugins() return self._plugins end
 
 ---Imports all plugin specs from the direct submodules under the root module.
 ---
@@ -80,9 +76,7 @@ function Manager:import(root)
     local mods = {}
     Utils.scan_submods(root, function(mod, path)
         if package.preload[mod] == nil then
-            package.preload[mod] = function()
-                return dofile(path)
-            end
+            package.preload[mod] = function() return dofile(path) end
         end
         table.insert(mods, mod)
     end)
@@ -225,9 +219,7 @@ function Manager:setup()
     end
     self:_really_setup()
 
-    local freezed = function()
-        error("PluginManager has been freezed")
-    end
+    local freezed = function() error("PluginManager has been freezed") end
     setmetatable(self._plugins, { __newindex = freezed })
     setmetatable(self._plugin_map, { __newindex = freezed })
 
@@ -401,9 +393,7 @@ end
 -- TODO: migrate to mini.test
 function Manager.test_add_plugin()
     MiniDeps = {
-        add = function(p)
-            vim.print(p)
-        end,
+        add = function(p) vim.print(p) end,
     }
     local m = Manager.new()
     m:add({ "a", dependencies = { "b", "d" } })
@@ -417,9 +407,7 @@ function Manager.test_add_plugin()
     m:add({
         "a",
         priority = 999,
-        config = function(self)
-            vim.print("SETUP(A)", self)
-        end,
+        config = function(self) vim.print("SETUP(A)", self) end,
     })
     vim.print("LOAD(A)")
     m:load(m:get("a"))

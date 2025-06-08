@@ -16,16 +16,12 @@ local Utils = {}
 ---Display a notification.
 ---@param level "TRACE"|"DEBUG"|"INFO"|"WARN"|"ERROR"
 ---@param msg string
-function Utils.notify(level, msg)
-    vim.notify(msg, vim.log.levels[level])
-end
+function Utils.notify(level, msg) vim.notify(msg, vim.log.levels[level]) end
 
 ---Display a notification with `string.format`.
 ---@param level "TRACE"|"DEBUG"|"INFO"|"WARN"|"ERROR"
 ---@param msg string
-function Utils.notifyf(level, msg, ...)
-    vim.notify(string.format(msg, ...), vim.log.levels[level])
-end
+function Utils.notifyf(level, msg, ...) vim.notify(string.format(msg, ...), vim.log.levels[level]) end
 
 ---Traverses all direct submodules under the given module, including the root
 ---module if it exists.
