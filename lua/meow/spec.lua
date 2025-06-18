@@ -25,15 +25,19 @@
 ---different mini modules independently. By default, any mini plugin (determined
 ---by a name starting with "mini.") automatically becomes a shadow plugin.
 ---@field shadow? MeoSpecCond
----Whether to enable this plugin. The default is true. Disabled plugins will not
----be added to MiniDeps and will therefore be cleaned up.
+---Whether to enable this plugin. The default is `true`. Disabled plugins will
+---not be added to MiniDeps and will therefore be cleaned up.
 ---@field enabled? MeoSpecCond
+---Whether to load this plugin. The default is `true`. If set to `false`, this
+---plugin will be ignored when loading plugins, but it will still be added to
+---MiniDeps, which prevents this plugin from being uninstalled.
+---@field cond? MeoSpecCond
 ---A integer used to manuallly adjust the loading order.
 ---
 ---Plugins with a higher priority are loaded first. The recommended range is
----*[0, 100]*, and the default value is set to 50.
+---*[0, 100]*, and the default value is set to `50`.
 ---@field priority? integer
----Whether to lazily load this plugin. The default is true only if an event
+---Whether to lazily load this plugin. The default is `true` only if an event
 ---handler is set or it is added as a dependency.
 ---
 ---A plugin can be explicitly set to be lazy without any event handlers, as

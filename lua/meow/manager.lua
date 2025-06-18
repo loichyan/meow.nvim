@@ -179,10 +179,10 @@ function Manager:add(spec)
     return plugin
 end
 
----Adds the dependency specs of the given plugin.
+---Imports the dependency specs of the given plugin.
 ---@private
 ---@param plugin MeoPlugin
-function Manager:_add_dependencies(plugin)
+function Manager:_import_dependencies(plugin)
     if plugin.dependencies then
         plugin._deps = plugin._deps or {}
         for _, dep_spec in ipairs(plugin.dependencies) do
@@ -230,9 +230,7 @@ end
 ---registered lazy-loading plugins before updating or cleaning.
 function Manager:activate_all()
     for _, plugin in ipairs(self._plugins) do
-        if plugin._state ~= PluginState.DISABLED then
-            self:activate(plugin)
-        end
+        self:activate(plugin)
     end
 end
 
@@ -255,6 +253,8 @@ function Manager:_really_setup()
             if plugin._state ~= PluginState.NONE then
             elseif not plugin:is_enabled() then
                 plugin._state = PluginState.DISABLED
+            elseif plugin:is_ignored() then
+                plugin._state = PluginState.IGNORED
             else
                 if not plugin:is_shadow() then
                     plugin.path = vim.fs.normalize(
@@ -265,8 +265,8 @@ function Manager:_really_setup()
                 if plugin.init then
                     plugin:init()
                 end
-                -- Add all dependency specs.
-                self:_add_dependencies(plugin)
+                -- Import all dependency specs.
+                self:_import_dependencies(plugin)
                 if plugin:is_lazy() then
                     table.insert(opt_plugins, plugin)
                 else
@@ -311,7 +311,9 @@ end
 ---Loads a plugin if it is not loaded or disabled.
 ---@param plugin MeoPlugin
 function Manager:load(plugin)
-    if plugin._state >= PluginState.LOADING then
+    if plugin._state >= PluginState.IGNORED then
+        Utils.notifyf("ERROR", "attempted to load a disabled plugin '%s'", plugin.name)
+    elseif plugin._state >= PluginState.LOADING then
         return
     end
 
@@ -331,7 +333,7 @@ end
 ---Adds the given to MiniDeps.
 ---@param plugin MeoPlugin
 function Manager:activate(plugin)
-    if plugin._state >= PluginState.ACTIVATED then
+    if plugin._state >= PluginState.ACTIVATED and plugin._state ~= PluginState.IGNORED then
         return
     end
     -- Apply snapshot.
@@ -340,7 +342,9 @@ function Manager:activate(plugin)
         MiniDeps.add(plugin:to_mini())
     end
 
-    plugin._state = PluginState.ACTIVATED
+    if plugin._state < PluginState.ACTIVATED then
+        plugin._state = PluginState.ACTIVATED
+    end
 end
 
 ---Resolves dependencies that are not loaded and required by the given plugin.
@@ -363,8 +367,8 @@ end
 ---@param result MeoPlugin[]
 ---@param plugin MeoPlugin
 function Manager:_collect_dependencies(result, plugin)
-    -- Skip if resolved or loaded.
-    if plugin._level ~= 0 or plugin._level >= PluginState.LOADING then
+    -- Skip if resolved, loaded or disabled.
+    if plugin._level ~= 0 or plugin._state >= PluginState.LOADING then
         return
     end
 
@@ -410,9 +414,9 @@ function Manager.test_add_plugin()
         config = function(self) vim.print("SETUP(A)", self) end,
     })
     vim.print("LOAD(A)")
-    m:load(m:get("a"))
+    m:load(assert(m:get("a")))
     vim.print("LOAD(F)")
-    m:load(m:get("f"))
+    m:load(assert(m:get("f")))
 end
 
 return Manager

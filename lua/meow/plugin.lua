@@ -14,7 +14,8 @@ local PluginState = {
     ACTIVATED = 1,
     LOADING = 2,
     LOADED = 3,
-    DISABLED = 4,
+    IGNORED = 4,
+    DISABLED = 5,
 }
 
 ---@type table<string,"primitive"|"list"|"table">
@@ -26,6 +27,7 @@ local SPEC_VTYPES = {
 
     shadow = "primitive",
     enabled = "primitive",
+    cond = "primitive",
     priority = "primitive",
 
     lazy = "primitive",
@@ -66,6 +68,7 @@ end
 ---@field hooks? MeoSpecHooks
 ---@field shadow? MeoSpecCond
 ---@field enabled? MeoSpecCond
+---@field cond? MeoSpecCond
 ---@field priority integer
 ---@field lazy? MeoSpecCond
 ---@field event? string[]
@@ -133,18 +136,25 @@ end
 
 ---Returns whether this plugin is loaded.
 ---@return boolean
-function Plugin:is_loaded() return self._state == PluginState.LOADING end
+function Plugin:is_loaded() return self._state == PluginState.LOADED end
 
+---Returns `shadow == true`.
 ---@return boolean
 function Plugin:is_shadow() return self:_get_cond("shadow", infer_shadow_state) end
 
+---Returns `enabled == true`.
 ---@return boolean
 function Plugin:is_enabled() return self:_get_cond("enabled", true) end
 
+---Returns `cond == false`.
+---@return boolean
+function Plugin:is_ignored() return not self:_get_cond("cond", true) end
+
+---Returns `lazy == true`.
 function Plugin:is_lazy() return self:_get_cond("lazy", infer_lazy_state) end
 
 ---Resolves the specified conditional field.
----@param key "shadow"|"enabled"|"lazy"
+---@param key "shadow"|"enabled"|"cond"|"lazy"
 ---@param default MeoSpecCond
 ---@return boolean
 function Plugin:_get_cond(key, default)

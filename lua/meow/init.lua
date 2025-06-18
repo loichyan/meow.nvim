@@ -43,6 +43,12 @@ function Meow.setup(opts)
     end
 end
 
+---@return MeoPlugin[]
+function Meow.plugins() return Meow.manager:plugins() end
+
+---@return MeoPlugin?
+function Meow.get(name) return Meow.manager:get(name) end
+
 ---Loads the plugin specified by name.
 function Meow.load(name)
     local plugin = Meow.manager:get(name)
