@@ -1,0 +1,88 @@
+---@meta _
+
+---@alias MeoSpecs MeoSpec[]|MeoSpec
+
+---@class MeoSpec
+---The identifier of this plugin.
+---
+---The URI to the plugin source can be specified, of which the basename is set
+---to the plugin's name.
+---@field [1]? string
+---The URI to the plugin source.
+---@field source? string
+---The checkout target after the source is cloned.
+---@field checkout? string
+---The branch used to track new changes.
+---@field monitor? string
+---Hooks invoked on certain events.
+---@field hooks? MeoSpecHooks
+---An alias of `hooks.post_checkout`.
+---@field build? MeoSpecHook
+---Whether to make this plugin "shadow" other plugins.
+---
+---A shadow plugin is not added to MiniDeps and exists only to perform the setup
+---function on the configured events. This is especially useful for setting up
+---different mini modules independently. By default, any mini plugin (determined
+---by a name starting with "mini.") automatically becomes a shadow plugin.
+---@field shadow? MeoSpecCond
+---Whether to enable this plugin. The default is `true`. Disabled plugins will
+---not be added to MiniDeps and will therefore be cleaned up.
+---@field enabled? MeoSpecCond
+---Whether to load this plugin. The default is `true`. If set to `false`, this
+---plugin will be ignored when loading plugins, but it will still be added to
+---MiniDeps, which prevents this plugin from being uninstalled.
+---@field cond? MeoSpecCond
+---A integer used to manuallly adjust the loading order.
+---
+---Plugins with a higher priority are loaded first. The recommended range is
+---*[0, 100]*, and the default value is set to `50`.
+---@field priority? integer
+---Whether to lazily load this plugin. The default is `true` only if an event
+---handler is set or it is added as a dependency.
+---
+---A plugin can be explicitly set to be lazy without any event handlers, as
+---every plugin will be loaded when it is `require`d. However, the plugin will
+---not be added to MiniDeps until it is loaded, so updating or cleaning may not
+---work properly.
+---@field lazy? MeoSpecCond
+---Events to trigger lazy-loading.
+---@field event? MeoSpecStrList
+---Filetypes to trigger lazy-loading.
+---@field ft? MeoSpecStrList
+---Manually specify the modules to trigger the lazy-loading on requiring.
+---
+---By default, all modules and directories under `<plugin_path>/lua/` are used.
+---@field module? MeoSpecStrList
+---The function used to set up additional initializations.
+---
+---Note this function is always invoked BEFORE the plugin is loaded, which means
+---the plugin cannot be `require`d during the execution.
+---@field init? fun(self:MeoPlugin)
+---The function used to set up this plugin after loading.
+---@field config? fun(self:MeoPlugin)
+---A list of plugins that should be loaded before this.
+---
+---For convenience, a plugin spec, which is merged into existing specs if this
+---plugin is enabled, can be specified instead of a plugin name.
+---@field dependencies? (string|MeoSpec)[]
+---A list of module paths to load additional specs.
+---
+---All the direct modules under the given paths are imported. Every module must
+---return a plugin spec or a list of plugin specs.
+---@field import? MeoSpecStrList
+
+---@alias MeoSpecStrList string|string[]
+---@alias MeoSpecCond boolean|fun(self:MeoPlugin):boolean
+
+---@class MeoSpecHooks
+---@field pre_install?   MeoSpecHook - Before creating the plugin directory.
+---@field post_install?  MeoSpecHook - After creating the plugin directory.
+---@field pre_checkout?  MeoSpecHook - Before making change in the source.
+---@field post_checkout? MeoSpecHook - After making change in the source.
+
+---@alias MeoSpecHook fun(args:MeoSpecHookArgs)
+
+---@class MeoSpecHookArgs
+---@field path   string - The absolute path to the plugin's directory.
+---@field source string - The resolved `source` from the spec.
+---@field name   string - The resolved `name` from the spec.
