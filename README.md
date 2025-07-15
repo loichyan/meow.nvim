@@ -42,7 +42,7 @@ end)
 
 After that, restart Neovim, and you're ready to go!
 
-For a real-world example, check out [Meowim](https://github.com/loicyan/Meowim).
+For a real-world example, check out [Meowim](https://github.com/loichyan/Meowim).
 
 ## ⚙️ Configuration
 
