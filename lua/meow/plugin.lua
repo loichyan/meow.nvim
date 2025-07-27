@@ -10,54 +10,54 @@
 ---@private
 ---@enum MeoPluginState
 local PluginState = {
-    NONE = 0,
-    ACTIVATED = 1,
-    LOADING = 2,
-    LOADED = 3,
-    IGNORED = 4,
-    DISABLED = 5,
+  NONE = 0,
+  ACTIVATED = 1,
+  LOADING = 2,
+  LOADED = 3,
+  IGNORED = 4,
+  DISABLED = 5,
 }
 
 ---@type table<string,"primitive"|"list"|"table">
 local SPEC_VTYPES = {
-    source = "primitive",
-    checkout = "primitive",
-    monitor = "primitive",
-    hooks = "table",
+  source = "primitive",
+  checkout = "primitive",
+  monitor = "primitive",
+  hooks = "table",
 
-    shadow = "primitive",
-    enabled = "primitive",
-    cond = "primitive",
-    priority = "primitive",
+  shadow = "primitive",
+  enabled = "primitive",
+  cond = "primitive",
+  priority = "primitive",
 
-    lazy = "primitive",
-    event = "list",
-    ft = "list",
-    module = "list",
+  lazy = "primitive",
+  event = "list",
+  ft = "list",
+  module = "list",
 
-    init = "primitive",
-    config = "primitive",
+  init = "primitive",
+  config = "primitive",
 
-    dependencies = "list",
-    import = "list",
+  dependencies = "list",
+  import = "list",
 }
 ---@type string[]
 local MINI_SPEC_KEYS = {
-    "name",
-    "source",
-    "checkout",
-    "monitor",
-    "hooks",
+  "name",
+  "source",
+  "checkout",
+  "monitor",
+  "hooks",
 }
 
 ---@type MeoSpecCond
 local infer_shadow_state = function(plugin)
-    return plugin.name ~= "mini.nvim" and vim.startswith(plugin.name, "mini.")
+  return plugin.name ~= "mini.nvim" and vim.startswith(plugin.name, "mini.")
 end
 
 ---@type MeoSpecCond
 local infer_lazy_state = function(plugin)
-    return not not (plugin._is_dep or plugin.event or plugin.ft or plugin.module)
+  return not not (plugin._is_dep or plugin.event or plugin.ft or plugin.module)
 end
 
 ---@class MeoPlugin
@@ -99,39 +99,37 @@ Plugin._State = PluginState
 ---@param name string
 ---@return MeoPlugin
 function Plugin.new(name)
-    return setmetatable({
-        name = name,
-        priority = 50,
-        _level = 0,
-        _state = PluginState.NONE,
-    }, { __index = Plugin })
+  return setmetatable({
+    name = name,
+    priority = 50,
+    _level = 0,
+    _state = PluginState.NONE,
+  }, { __index = Plugin })
 end
 
 ---Updates the properties of the given plugin from a spec table.
 ---@private
 ---@param spec MeoSpec
 function Plugin:_update_spec(spec)
-    -- Merge values of spec keys.
-    for key, val in pairs(spec) do
-        local vtype = SPEC_VTYPES[key]
-        if not vtype then
-        elseif vtype == "list" then
-            if type(val) ~= "table" then
-                val = { val }
-            end
-            self[key] = vim.list_extend(self[key] or {}, val)
-        elseif vtype == "table" then
-            self[key] = vim.tbl_extend("force", self[key] or {}, val)
-        else
-            self[key] = val
-        end
+  -- Merge values of spec keys.
+  for key, val in pairs(spec) do
+    local vtype = SPEC_VTYPES[key]
+    if not vtype then
+    elseif vtype == "list" then
+      if type(val) ~= "table" then val = { val } end
+      self[key] = vim.list_extend(self[key] or {}, val)
+    elseif vtype == "table" then
+      self[key] = vim.tbl_extend("force", self[key] or {}, val)
+    else
+      self[key] = val
     end
+  end
 
-    -- Apply property aliases.
-    if spec.build then
-        self.hooks = self.hooks or {}
-        self.hooks.post_checkout = spec.build
-    end
+  -- Apply property aliases.
+  if spec.build then
+    self.hooks = self.hooks or {}
+    self.hooks.post_checkout = spec.build
+  end
 end
 
 ---Returns whether this plugin is loaded.
@@ -158,28 +156,22 @@ function Plugin:is_lazy() return self:_get_cond("lazy", infer_lazy_state) end
 ---@param default MeoSpecCond
 ---@return boolean
 function Plugin:_get_cond(key, default)
-    local val = self[key]
-    if type(val) == "boolean" then
-        return val
-    end
-    if val == nil then
-        val = default
-    end
-    if type(val) == "function" then
-        val = val(self)
-    end
-    self[key] = not not val
-    return self[key]
+  local val = self[key]
+  if type(val) == "boolean" then return val end
+  if val == nil then val = default end
+  if type(val) == "function" then val = val(self) end
+  self[key] = not not val
+  return self[key]
 end
 
 ---Converts the given plugin to a spec acceptable to MiniDeps.
 ---@return table
 function Plugin:to_mini()
-    local spec = {}
-    for _, key in ipairs(MINI_SPEC_KEYS) do
-        spec[key] = self[key]
-    end
-    return spec
+  local spec = {}
+  for _, key in ipairs(MINI_SPEC_KEYS) do
+    spec[key] = self[key]
+  end
+  return spec
 end
 
 return Plugin
