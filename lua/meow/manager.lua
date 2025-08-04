@@ -67,23 +67,72 @@ function Manager:plugins() return self._plugins end
 ---
 ---A module may return a plugin spec or a list of plugin specs.
 ---@param root string
-function Manager:import(root)
-  ---@type string[]
-  local mods = {}
-  Utils.scan_submods(root, function(mod, path)
-    if package.preload[mod] == nil then
-      package.preload[mod] = function() return dofile(path) end
+---@param opts? {cache_token?:string}
+function Manager:import(root, opts)
+  opts = opts or {}
+
+  -- Try load form cache
+  local cache_token = opts.cache_token
+  local cache_dir, cache_name, cache_path, cache_token_path
+  if cache_token then
+    cache_dir = vim.fn.stdpath("cache") .. "/meow/"
+    cache_name = root:gsub("%.", "_")
+    cache_path = cache_dir .. cache_name .. ".lua"
+    cache_token_path = cache_dir .. cache_name .. "_cache"
+
+    local cache_token_file, _ = io.open(cache_token_path, "r")
+    if cache_token_file and cache_token_file:read("*a") == cache_token then
+      -- Cache hit, all modules should be imported
+      dofile(cache_path)(self)
+      return
     end
-    table.insert(mods, mod)
-  end)
+  end
 
-  if #mods == 0 then error("failed to determine path of import: " .. root) end
+  -- Find all modules under the root module
+  ---@type {[1]:string,[2]:string}[]
+  local mods = {}
+  Utils.scan_submods(root, function(mod, path) table.insert(mods, { mod, path }) end)
+  if #mods == 0 then error("failed to find imports from: " .. root) end
+  -- Ensure that all modules are imported in alphabetical order
+  table.sort(mods, function(a, b) return a[1] < b[1] end)
 
-  -- Ensure that all modules are imported in alphabetical order.
-  table.sort(mods)
-  for _, mod in ipairs(mods) do
+  -- Rebuild cache if expired or missing
+  if cache_token then
+    vim.fn.mkdir(cache_dir, "p")
+    local cache_file = assert(io.open(cache_path, "w"))
+
+    -- Load modules sequentially
+    assert(cache_file:write("return function(manager)\n"))
+    for _, m in ipairs(mods) do
+      local mod, path = m[1], m[2]
+      local mod_name = vim.inspect(mod)
+      local mod_source = assert(io.open(path, "r")):read("*a")
+      assert(
+        cache_file:write(
+          ("package.preload[%s] = function()\n"):format(mod_name),
+          mod_source,
+          ("end\nmanager:add_many(require(%s))\n"):format(mod_name)
+        )
+      )
+    end
+    assert(cache_file:write("end"))
+
+    -- Re-compile to bytecodes
+    assert(cache_file:close())
+    local bytes = string.dump(assert(loadfile(cache_path)))
+    assert(assert(io.open(cache_path, "w")):write(bytes))
+    -- Save the cache token
+    assert(assert(io.open(cache_token_path, "w")):write(cache_token))
+  end
+
+  for _, m in ipairs(mods) do
+    local mod, path = m[1], m[2]
+    ---Import specs from a module, reporting errors if failed
     local ok, err = pcall(function()
-      ---@type MeoSpecs
+      local chunk, err = loadfile(path)
+      if not chunk then error(err) end
+      package.preload[mod] = chunk
+
       local specs = require(mod)
       if type(specs) ~= "table" then
         error("invalid spec: " .. vim.inspect(specs))
@@ -91,7 +140,7 @@ function Manager:import(root)
         self:add_many(specs)
       end
     end)
-    if not ok then error(("failed to import module %s: %s"):format(mod, err)) end
+    if not ok then Utils.notifyf("ERROR", "failed to import module %s: %s", mod, err) end
   end
 end
 
@@ -139,11 +188,18 @@ function Manager:add(spec)
     -- If the spec contains only an import field, resolve the import
     -- immediately; otherwise, defer the resolution after this plugin is
     -- activated.
-    if spec.import then
-      local mods = spec.import
-      if type(mods) ~= "table" then mods = { mods } end
-      for _, mod in ipairs(mods) do
-        self:import(mod)
+    local imports = spec.import
+    if imports then
+      local cache_token = spec.import_cache
+      if type(cache_token) == "function" then cache_token = cache_token() end
+      local import_opts = { cache_token = cache_token }
+
+      if type(imports) == "table" then
+        for _, mod in ipairs(imports) do
+          self:import(mod, import_opts)
+        end
+      else
+        self:import(imports, import_opts)
       end
     end
     return

@@ -70,6 +70,11 @@
 ---All the direct modules under the given paths are imported. Every module must
 ---return a plugin spec or a list of plugin specs.
 ---@field import? MeoSpecStrList
+---A token to identify the state of imports.
+---
+---If provided, all imported modules will be cached in a single file. This can
+---reduce I/O operations on a large number of scattered specs.
+---@field import_cache? string|(fun():string)
 
 ---@alias MeoSpecStrList string|string[]
 ---@alias MeoSpecCond boolean|fun(self:MeoPlugin):boolean
