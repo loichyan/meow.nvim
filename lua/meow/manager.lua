@@ -34,28 +34,29 @@ end
 ---@type table<string,string>|nil
 local import_cache_tokens
 local cache_dirty = false
-local cache_dir = vim.fn.stdpath("cache") .. "/meow/"
-
----@param name string
----@return string?
-local get_cache_token = function(name)
-  if not import_cache_tokens then
-    local cache_token_path = cache_dir .. "cache"
-    local ok, tokens = pcall(dofile, cache_token_path)
-    import_cache_tokens = ok and tokens or {}
-  end
-  return import_cache_tokens[name]
-end
+local cache_dir = vim.fn.stdpath("cache") .. "/meow"
 
 ---@param name string
 ---@param token string
-local set_cache_token = function(name, token)
-  import_cache_tokens[name] = token
-  cache_dirty = true
+---@return boolean
+local check_cache_token = function(name, token)
+  if not import_cache_tokens then
+    local cache_token_path = cache_dir .. "/cache"
+    local ok, tokens = pcall(dofile, cache_token_path)
+    import_cache_tokens = ok and tokens or {}
+  end
+  if import_cache_tokens[name] == token then
+    return true
+  else
+    import_cache_tokens[name] = token
+    cache_dirty = true
+    return false
+  end
 end
 
 local sync_cache_tokens = function()
-  local cache_token_path = cache_dir .. "cache"
+  vim.fn.mkdir(cache_dir, "p")
+  local cache_token_path = cache_dir .. "/cache"
   assert(assert(io.open(cache_token_path, "w")):write("return ", vim.inspect(import_cache_tokens)))
 end
 
@@ -104,8 +105,8 @@ function Manager:import(root, opts)
   local cache_name, cache_path
   if cache_token then
     cache_name = root:gsub("%.", "_")
-    cache_path = cache_dir .. cache_name .. ".lua"
-    if get_cache_token(cache_name) == cache_token then
+    cache_path = cache_dir .. "/" .. cache_name .. ".lua"
+    if check_cache_token(cache_name, cache_token) then
       -- Cache hit, all modules should be imported
       dofile(cache_path)(self)
       return
@@ -119,35 +120,6 @@ function Manager:import(root, opts)
   if #mods == 0 then error("failed to find imports from: " .. root) end
   -- Ensure that all modules are imported in alphabetical order
   table.sort(mods, function(a, b) return a[1] < b[1] end)
-
-  -- Rebuild cache if expired or missing
-  if cache_token then
-    vim.fn.mkdir(cache_dir, "p")
-    local cache_file = assert(io.open(cache_path, "w"))
-
-    -- Load modules sequentially
-    assert(cache_file:write("return function(manager)\n"))
-    for _, m in ipairs(mods) do
-      local mod, path = m[1], m[2]
-      local mod_name = vim.inspect(mod)
-      local mod_source = assert(io.open(path, "r")):read("*a")
-      assert(
-        cache_file:write(
-          ("package.preload[%s] = function()\n"):format(mod_name),
-          mod_source,
-          ("end\nmanager:add_many(require(%s))\n"):format(mod_name)
-        )
-      )
-    end
-    assert(cache_file:write("end"))
-
-    -- Re-compile to bytecodes
-    assert(cache_file:close())
-    local bytes = string.dump(assert(loadfile(cache_path)))
-    assert(assert(io.open(cache_path, "w")):write(bytes))
-    -- Save the cache token
-    set_cache_token(cache_name, cache_token)
-  end
 
   for _, m in ipairs(mods) do
     local mod, path = m[1], m[2]
@@ -165,6 +137,35 @@ function Manager:import(root, opts)
       end
     end)
     if not ok then Utils.notifyf("ERROR", "failed to import module %s: %s", mod, err) end
+  end
+
+  if cache_token then
+    -- Defer cache rebuilding to speed up startup
+    vim.schedule(function()
+      vim.fn.mkdir(cache_dir, "p")
+      local cache_file = assert(io.open(cache_path, "w"))
+
+      -- Load modules sequentially
+      assert(cache_file:write("return function(manager)\n"))
+      for _, m in ipairs(mods) do
+        local mod, path = m[1], m[2]
+        local mod_name = vim.inspect(mod)
+        local mod_source = assert(io.open(path, "r")):read("*a")
+        assert(
+          cache_file:write(
+            ("package.preload[%s] = function()\n"):format(mod_name),
+            mod_source,
+            ("end\nmanager:add_many(require(%s))\n"):format(mod_name)
+          )
+        )
+      end
+      assert(cache_file:write("end"))
+
+      -- Re-compile to bytecodes
+      assert(cache_file:close())
+      local bytes = string.dump(assert(loadfile(cache_path)))
+      assert(assert(io.open(cache_path, "w")):write(bytes))
+    end)
   end
 end
 
@@ -372,9 +373,8 @@ function Manager:_really_setup()
 
   -- 3) Setup lazy handlers
   handler:setup()
-
   -- 4) Sync cache tokens if updated
-  if cache_dirty then sync_cache_tokens() end
+  if cache_dirty then vim.schedule(sync_cache_tokens) end
 end
 
 ---Loads a plugin if it is not loaded or disabled.
