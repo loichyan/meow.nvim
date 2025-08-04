@@ -31,6 +31,34 @@ local parse_plugin_name = function(str)
   end
 end
 
+---@type table<string,string>|nil
+local import_cache_tokens
+local cache_dirty = false
+local cache_dir = vim.fn.stdpath("cache") .. "/meow/"
+
+---@param name string
+---@return string?
+local get_cache_token = function(name)
+  if not import_cache_tokens then
+    local cache_token_path = cache_dir .. "cache"
+    local ok, tokens = pcall(dofile, cache_token_path)
+    import_cache_tokens = ok and tokens or {}
+  end
+  return import_cache_tokens[name]
+end
+
+---@param name string
+---@param token string
+local set_cache_token = function(name, token)
+  import_cache_tokens[name] = token
+  cache_dirty = true
+end
+
+local sync_cache_tokens = function()
+  local cache_token_path = cache_dir .. "cache"
+  assert(assert(io.open(cache_token_path, "w")):write("return ", vim.inspect(import_cache_tokens)))
+end
+
 ---@class MeoPluginManager
 ---Aliases of events.
 ---@field event_aliases table<string,string[]>
@@ -73,15 +101,11 @@ function Manager:import(root, opts)
 
   -- Try load form cache
   local cache_token = opts.cache_token
-  local cache_dir, cache_name, cache_path, cache_token_path
+  local cache_name, cache_path
   if cache_token then
-    cache_dir = vim.fn.stdpath("cache") .. "/meow/"
     cache_name = root:gsub("%.", "_")
     cache_path = cache_dir .. cache_name .. ".lua"
-    cache_token_path = cache_dir .. cache_name .. "_cache"
-
-    local cache_token_file, _ = io.open(cache_token_path, "r")
-    if cache_token_file and cache_token_file:read("*a") == cache_token then
+    if get_cache_token(cache_name) == cache_token then
       -- Cache hit, all modules should be imported
       dofile(cache_path)(self)
       return
@@ -122,7 +146,7 @@ function Manager:import(root, opts)
     local bytes = string.dump(assert(loadfile(cache_path)))
     assert(assert(io.open(cache_path, "w")):write(bytes))
     -- Save the cache token
-    assert(assert(io.open(cache_token_path, "w")):write(cache_token))
+    set_cache_token(cache_name, cache_token)
   end
 
   for _, m in ipairs(mods) do
@@ -346,7 +370,11 @@ function Manager:_really_setup()
     end
   end
 
+  -- 3) Setup lazy handlers
   handler:setup()
+
+  -- 4) Sync cache tokens if updated
+  if cache_dirty then sync_cache_tokens() end
 end
 
 ---Loads a plugin if it is not loaded or disabled.
