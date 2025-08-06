@@ -83,6 +83,98 @@ function Manager.new()
   }, { __index = Manager })
 end
 
+---Activates all enabled plugins and sets up configured event handlers.
+---
+---CAVEAT: This function may only be called once, after which no modifications
+---may be made to the instance or any added plugins.
+function Manager:setup()
+  if self._did_setup then
+    Utils.notify("WARN", "PluginManager has been initialized")
+    return
+  end
+  self:_really_setup()
+
+  local freezed = function() error("PluginManager has been freezed") end
+  setmetatable(self._plugins, { __newindex = freezed })
+  setmetatable(self._plugin_map, { __newindex = freezed })
+
+  self._did_setup = true
+end
+
+function Manager:_really_setup()
+  local handler = require("meow.handler").new(self)
+  ---@type MeoPlugin[]
+  local opt_plugins = {}
+
+  -- 1) Resolve imports and dependencies.
+  local visited = 1
+  while visited <= #self._plugins do
+    -- Collect start plugins to sort them so that they are loaded in the
+    -- desired order.
+    ---@type MeoPlugin[]
+    local start_plugins = {}
+    repeat
+      local plugin = self._plugins[visited]
+      visited = visited + 1
+
+      if plugin._state ~= PluginState.NONE then
+      elseif not plugin:is_enabled() then
+        plugin._state = PluginState.DISABLED
+      elseif plugin:is_ignored() then
+        plugin._state = PluginState.IGNORED
+      else
+        if not plugin:is_shadow() then
+          plugin.path =
+            vim.fs.normalize(MiniDeps.config.path.package .. "/pack/deps/opt/" .. plugin.name)
+        end
+
+        if plugin.init then plugin:init() end
+        -- Import all dependency specs.
+        self:_import_dependencies(plugin)
+        if plugin:is_lazy() then
+          table.insert(opt_plugins, plugin)
+        else
+          table.insert(start_plugins, plugin)
+        end
+      end
+    until visited > #self._plugins
+
+    table.sort(start_plugins, plugin_ordering)
+    for _, plugin in ipairs(start_plugins) do
+      -- Load the plugin before resolving its imports as the import paths
+      -- may not exist if the plugin not installed.
+      self:load(plugin)
+      if plugin.import then
+        for _, mod in ipairs(plugin.import) do
+          self:import(mod)
+        end
+      end
+    end
+  end
+
+  -- 2) Lazy-load opt plugins.
+  for _, plugin in ipairs(opt_plugins) do
+    if plugin.import then
+      Utils.notify("ERROR", "imports of lazy plugins are not supported: " .. plugin.name)
+    end
+
+    if not plugin.path or vim.uv.fs_stat(plugin.path) then
+      handler:add(plugin)
+    else
+      -- If a plugin is not installed, defer the setup of handlers.
+      MiniDeps.later(function()
+        self:activate(plugin)
+        handler:add(plugin)
+      end)
+    end
+  end
+
+  -- 3) Setup lazy handlers
+  handler:setup()
+  -- 4) Sync cache tokens if updated
+  if cache_dirty then vim.schedule(sync_cache_tokens) end
+end
+
 ---Returns the plugin specified by name.
 ---@param name string
 ---@return MeoPlugin?
@@ -277,109 +369,18 @@ function Manager:_import_dependencies(plugin)
   end
 end
 
----Activates all enabled plugins and sets up configured event handlers.
----
----CAVEAT: This function may only be called once, after which no modifications
----may be made to the instance or any added plugins.
-function Manager:setup()
-  if self._did_setup then
-    Utils.notify("WARN", "PluginManager has been initialized")
-    return
-  end
-  self:_really_setup()
-
-  local freezed = function() error("PluginManager has been freezed") end
-  setmetatable(self._plugins, { __newindex = freezed })
-  setmetatable(self._plugin_map, { __newindex = freezed })
-
-  self._did_setup = true
-end
-
----Adds all plugins to MiniDeps, mainly used to to make MiniDeps recognize all
----registered lazy-loading plugins before updating or cleaning.
-function Manager:activate_all()
-  for _, plugin in ipairs(self._plugins) do
-    self:activate(plugin)
-  end
-end
-
-function Manager:_really_setup()
-  local handler = require("meow.handler").new(self)
-  ---@type MeoPlugin[]
-  local opt_plugins = {}
-
-  -- 1) Resolve imports and dependencies.
-  local visited = 1
-  while visited <= #self._plugins do
-    -- Collect start plugins to sort them so that they are loaded in the
-    -- desired order.
-    ---@type MeoPlugin[]
-    local start_plugins = {}
-    repeat
-      local plugin = self._plugins[visited]
-      visited = visited + 1
-
-      if plugin._state ~= PluginState.NONE then
-      elseif not plugin:is_enabled() then
-        plugin._state = PluginState.DISABLED
-      elseif plugin:is_ignored() then
-        plugin._state = PluginState.IGNORED
-      else
-        if not plugin:is_shadow() then
-          plugin.path =
-            vim.fs.normalize(MiniDeps.config.path.package .. "/pack/deps/opt/" .. plugin.name)
-        end
-
-        if plugin.init then plugin:init() end
-        -- Import all dependency specs.
-        self:_import_dependencies(plugin)
-        if plugin:is_lazy() then
-          table.insert(opt_plugins, plugin)
-        else
-          table.insert(start_plugins, plugin)
-        end
-      end
-    until visited > #self._plugins
-
-    table.sort(start_plugins, plugin_ordering)
-    for _, plugin in ipairs(start_plugins) do
-      -- Load the plugin before resolving its imports as the import paths
-      -- may not exist if the plugin not installed.
-      self:load(plugin)
-      if plugin.import then
-        for _, mod in ipairs(plugin.import) do
-          self:import(mod)
-        end
-      end
-    end
-  end
-
-  -- 2) Lazy-load opt plugins.
-  for _, plugin in ipairs(opt_plugins) do
-    if plugin.import then
-      Utils.notify("ERROR", "imports of lazy plugins are not supported: " .. plugin.name)
-    end
-
-    if not plugin.path or vim.uv.fs_stat(plugin.path) then
-      handler:add(plugin)
-    else
-      -- If a plugin is not installed, defer the setup of handlers.
-      MiniDeps.later(function()
-        self:activate(plugin)
-        handler:add(plugin)
-      end)
-    end
-  end
-
-  -- 3) Setup lazy handlers
-  handler:setup()
-  -- 4) Sync cache tokens if updated
-  if cache_dirty then vim.schedule(sync_cache_tokens) end
-end
-
 ---Loads a plugin if it is not loaded or disabled.
----@param plugin MeoPlugin
+---@param plugin string|MeoPlugin
 function Manager:load(plugin)
+  if type(plugin) == "string" then
+    local p = self:get(plugin)
+    if not p then
+      Utils.notify("ERROR", "attempted to load an undefined plugin " .. plugin)
+      return
+    end
+    plugin = p
+  end
+
   if plugin._state >= PluginState.IGNORED then
     Utils.notifyf("ERROR", "attempted to load a disabled plugin '%s'", plugin.name)
   elseif plugin._state >= PluginState.LOADING then
@@ -394,6 +395,14 @@ function Manager:load(plugin)
       if not ok then Utils.notifyf("ERROR", "failed to setup '%s': %s", dep.name, err) end
     end
     dep._state = PluginState.LOADED
+  end
+end
+
+---Adds all plugins to MiniDeps, mainly used to to make MiniDeps recognize all
+---registered lazy-loading plugins before updating or cleaning.
+function Manager:activate_all()
+  for _, plugin in ipairs(self._plugins) do
+    self:activate(plugin)
   end
 end
 

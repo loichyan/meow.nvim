@@ -5,12 +5,6 @@ local Utils = require("meow.utils")
 ---@field manager MeoPluginManager
 local Meow = {}
 
--- Export useful utilities.
-Meow.utils = Utils
-Meow.keyset = Utils.keyset
-Meow.notify = Utils.notify
-Meow.notifyf = Utils.notifyf
-
 local did_setup = false
 ---@param opts MeoOptions?
 function Meow.setup(opts)
@@ -37,21 +31,9 @@ function Meow.setup(opts)
   end
 end
 
----@return MeoPlugin[]
-function Meow.plugins() return Meow.manager:plugins() end
-
----@return MeoPlugin?
-function Meow.get(name) return Meow.manager:get(name) end
-
----Loads the plugin specified by name.
-function Meow.load(name)
-  local plugin = Meow.manager:get(name)
-  if not plugin then
-    Utils.notify("ERROR", "attempted to load an undefined plugin " .. name)
-  else
-    Meow.manager:load(plugin)
-  end
-end
+-----------------------------------
+-- Methods for Plugin Management --
+-----------------------------------
 
 ---Update plugins. See `:h MiniDeps.update()`.
 function Meow.update(...)
@@ -65,5 +47,36 @@ function Meow.clean(...)
   Meow.manager:activate_all()
   MiniDeps.clean(...)
 end
+
+---Returns the plugin specified by name.
+---@param name string
+---@return MeoPlugin?
+function Meow.get(name) return Meow.manager:get(name) end
+
+---Returns all registered plugins.
+---@return MeoPlugin[]
+function Meow.plugins() return Meow.manager:plugins() end
+
+---Returns all registered plugins.
+---@param root string
+---@param opts? {cache_token?:string}
+function Meow.import(root, opts) return Meow.manager:import(root, opts) end
+
+---Adds plugins from the given spec(s).
+---@param specs MeoSpecs
+function Meow.add(specs) return Meow.manager:add_many(specs) end
+
+---Loads a plugin if it is not loaded or disabled.
+---@param plugin string|MeoPlugin
+function Meow.load(plugin) return Meow.manager:load(plugin) end
+
+----------------------
+-- Useful Utilities --
+----------------------
+
+Meow.utils = Utils
+Meow.keyset = Utils.keyset
+Meow.notify = Utils.notify
+Meow.notifyf = Utils.notifyf
 
 return Meow
