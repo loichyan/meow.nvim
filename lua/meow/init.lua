@@ -78,6 +78,7 @@ Meow.utils = Utils
 ---@diagnostic disable-next-line: deprecated
 Meow.keyset = Utils.keyset
 Meow.keymap = Utils.keymap
+Meow.autocmd = Utils.autocmd
 Meow.notify = Utils.notify
 Meow.notifyf = Utils.notifyf
 

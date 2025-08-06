@@ -1,14 +1,10 @@
----@class MeoKeySpec
+---@class MeoKeySpec: vim.keymap.set.Opts
 ---@field [1] string - lhs
----@field [2] string|fun() - rhs
+---@field [2] string|(fun():string|nil) - rhs
 ---@field mode? string|string[]
----@field buffer? integer
----@field desc? string
----@field expr? boolean
----@field noremap? boolean
----@field nowait? boolean
----@field remap? boolean
----@field silent? boolean
+
+---@class MeoAutocmdSpec: vim.api.keyset.create_autocmd
+---@field event string|string[]
 
 ---@class MeoUtils
 local Utils = {}
@@ -94,6 +90,27 @@ function Utils.keymap(bufnr, specs)
     opts[1], opts[2], opts.mode = nil, nil, nil
     mode = mode or "n"
     vim.keymap.set(mode, lhs, rhs, opts)
+  end
+end
+
+---Creates Neovim autocmds using delcarative tables.
+---@overload fun(specs:MeoAutocmdSpec[])
+---@overload fun(group:string,specs:MeoAutocmdSpec[])
+function Utils.autocmd(group, specs)
+  if specs == nil then
+    specs = group
+    group = nil
+  else
+    ---@cast group string
+    group = vim.api.nvim_create_augroup(group, { clear = true })
+  end
+  ---@cast specs MeoAutocmdSpec[]
+
+  for _, spec in ipairs(specs) do
+    local opts = vim.tbl_extend("keep", spec, { group = group })
+    local event = opts.event
+    opts.event = nil
+    vim.api.nvim_create_autocmd(event, opts)
   end
 end
 
