@@ -193,9 +193,9 @@ function Manager:import(root, opts)
   opts = opts or {}
 
   -- Try load form cache
-  local cache_token = opts.cache_token
+  local cache_token = opts.cache_token or ""
   local cache_name, cache_path
-  if cache_token then
+  if cache_token ~= "" then
     cache_name = root:gsub("%.", "_")
     cache_path = cache_dir .. "/" .. cache_name .. ".lua"
     if check_cache_token(cache_name, cache_token) then
@@ -231,7 +231,7 @@ function Manager:import(root, opts)
     if not ok then Utils.notifyf("ERROR", "failed to import module %s: %s", mod, err) end
   end
 
-  if cache_token then
+  if cache_token ~= "" then
     -- Defer cache rebuilding to speed up startup
     vim.schedule(function()
       vim.fn.mkdir(cache_dir, "p")

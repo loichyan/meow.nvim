@@ -73,7 +73,8 @@
 ---A token to identify the state of imports.
 ---
 ---If provided, all imported modules will be cached in a single file. This can
----reduce I/O operations on a large number of scattered specs.
+---reduce I/O operations on a large number of scattered specs. To disable
+---caching, leave it unset or explicitly set it to an empty string.
 ---@field import_cache? string|(fun():string)
 
 ---@alias MeoSpecStrList string|string[]
