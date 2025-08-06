@@ -75,7 +75,9 @@ function Meow.load(plugin) return Meow.manager:load(plugin) end
 ----------------------
 
 Meow.utils = Utils
+---@diagnostic disable-next-line: deprecated
 Meow.keyset = Utils.keyset
+Meow.keymap = Utils.keymap
 Meow.notify = Utils.notify
 Meow.notifyf = Utils.notifyf
 
