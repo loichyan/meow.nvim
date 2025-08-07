@@ -67,12 +67,6 @@ function Utils.scan_dirmods(dir, allow_empty, cb)
   end
 end
 
----@deprecated use `Utils.keymap` instead
-function Utils.keyset(...)
-  Utils.notify("WARN", "`Utils.keyset` is deprecated, use `Utils.keymap` instead")
-  Utils.keymap(...)
-end
-
 ---Sets Neovim keymaps using delcarative key tables.
 ---@overload fun(specs:MeoKeySpec[])
 ---@overload fun(bufnr:integer,specs:MeoKeySpec[])
