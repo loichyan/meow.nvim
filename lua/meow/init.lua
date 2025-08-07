@@ -6,7 +6,7 @@ local Meow = {}
 
 local did_setup = false
 ---@param opts MeoOptions?
-Meow.setup = function(opts)
+function Meow.setup(opts)
   if did_setup then return end
   did_setup = true
   opts = opts or {}
@@ -38,7 +38,7 @@ end
 ---Update plugins. See `:h MiniDeps.update`.
 ---
 ---It's not necessary to use this unless `MeoOptions.patch_mini` is disabled.
-Meow.update = function(...)
+function Meow.update(...)
   Manager.activate_all()
   MiniDeps.update(...)
 end
@@ -46,7 +46,7 @@ end
 ---Clean plugins. See `:h MiniDeps.clean`.
 ---
 ---It's not necessary to use this unless `MeoOptions.patch_mini` is disabled.
-Meow.clean = function(...)
+function Meow.clean(...)
   Manager.activate_all()
   MiniDeps.clean(...)
 end

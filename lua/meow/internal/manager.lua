@@ -25,7 +25,7 @@ H.snapshot = {}
 ---CAVEAT: This function may only be called once, after which no modifications
 ---may be made to the instance or any added plugins.
 local did_setup = false
-Manager.setup = function()
+function Manager.setup()
   if did_setup then return end
   did_setup = true
 
@@ -105,18 +105,18 @@ end
 ---Returns the plugin specified by name.
 ---@param name string
 ---@return MeoPlugin?
-Manager.get = function(name) return H.plugin_map[name] end
+function Manager.get(name) return H.plugin_map[name] end
 
 ---Returns all registered plugins. The returned table MUST NOT be modified.
 ---@return MeoPlugin[]
-Manager.plugins = function() return vim.deepcopy(H.plugins) end
+function Manager.plugins() return vim.deepcopy(H.plugins) end
 
 ---Imports all plugin specs from the direct submodules under the root module.
 ---
 ---A module may return a plugin spec or a list of plugin specs.
 ---@param root string
 ---@param opts? {cache_token?:string}
-Manager.import = function(root, opts)
+function Manager.import(root, opts)
   opts = opts or {}
   local cache_token = opts.cache_token or Config.import_cache
   if type(cache_token) == "function" then cache_token = cache_token() end
@@ -191,7 +191,7 @@ end
 
 ---Adds one or more plugins from the given spec(s).
 ---@param specs MeoSpecs
-Manager.add_many = function(specs)
+function Manager.add_many(specs)
   if #specs > 1 or type(specs[1]) == "table" then
     ---@cast specs MeoSpec[]
     for _, spec in ipairs(specs) do
@@ -206,7 +206,7 @@ end
 ---instance if a name is specified.
 ---@param spec MeoSpec
 ---@return MeoPlugin?
-Manager.add = function(spec)
+function Manager.add(spec)
   if not spec[1] then
     -- If the spec contains only an import field, resolve the import
     -- immediately; otherwise, defer the resolution after this plugin is
@@ -247,7 +247,7 @@ end
 
 ---Loads a plugin if it is not loaded or disabled.
 ---@param plugin string|MeoPlugin
-Manager.load = function(plugin)
+function Manager.load(plugin)
   if type(plugin) == "string" then
     local p = Manager.get(plugin)
     if not p then
@@ -276,7 +276,7 @@ end
 
 ---Adds the given to MiniDeps.
 ---@param plugin MeoPlugin
-Manager.activate = function(plugin)
+function Manager.activate(plugin)
   if plugin._state >= PluginState.ACTIVATED and plugin._state ~= PluginState.IGNORED then return end
   -- Apply snapshot.
   plugin.checkout = H.snapshot[plugin.name] or plugin.checkout
@@ -287,7 +287,7 @@ end
 
 ---Adds all plugins to MiniDeps, mainly used to to make MiniDeps recognize all
 ---registered lazy-loading plugins before updating or cleaning.
-Manager.activate_all = function()
+function Manager.activate_all()
   for _, plugin in ipairs(H.plugins) do
     H.activate(plugin)
   end
@@ -295,7 +295,7 @@ end
 
 ---Loads the snapshot from the specified path.
 ---@param path string
-Manager.load_snap_from = function(path)
+function Manager.load_snap_from(path)
   local ok, snap = pcall(dofile, path)
   if not ok then
     Utils.notifyf("ERROR", "failed to load snapshot from '%s': %s", path, snap)
@@ -311,7 +311,7 @@ end
 
 ---Imports the dependency specs of the given plugin.
 ---@param plugin MeoPlugin
-H.import_dependencies = function(plugin)
+function H.import_dependencies(plugin)
   if plugin.dependencies then
     plugin._deps = plugin._deps or {}
     for _, dep_spec in ipairs(plugin.dependencies) do
@@ -343,7 +343,7 @@ end
 ---appropriate loading order.
 ---@param plugin MeoPlugin
 ---@return MeoPlugin[]
-H.resolve_dependencies = function(plugin)
+function H.resolve_dependencies(plugin)
   ---@type MeoPlugin[]
   local deps = {}
   H.collect_dependencies(deps, plugin)
@@ -354,7 +354,7 @@ end
 ---Recursively collects all dependencies of the given plugin using DFS.
 ---@param result MeoPlugin[]
 ---@param plugin MeoPlugin
-H.collect_dependencies = function(result, plugin)
+function H.collect_dependencies(result, plugin)
   -- Skip if resolved, loaded or disabled.
   if plugin._level ~= 0 or plugin._state >= PluginState.LOADING then return end
 
@@ -389,7 +389,7 @@ end
 ---@param a MeoPlugin
 ---@param b MeoPlugin
 ---@return boolean
-H.plugin_ordering = function(a, b)
+function H.plugin_ordering(a, b)
   if a._level ~= b._level then return a._level < b._level end
   if a.priority ~= b.priority then return a.priority > b.priority end
   return a._idx < b._idx
@@ -398,7 +398,7 @@ end
 ---Parses the spec name and possible source URI from the given string.
 ---@param str string
 ---@return string,string?
-H.parse_plugin_name = function(str)
+function H.parse_plugin_name(str)
   local basename = string.match(str, ".*/(.*)")
   if not basename then
     return str, nil
@@ -412,7 +412,7 @@ H.cache_dir = vim.fn.stdpath("cache") .. "/meow"
 ---@param name string
 ---@param token string
 ---@return boolean
-H.check_cache_token = function(name, token)
+function H.check_cache_token(name, token)
   if not H.import_cache_tokens then
     local cache_token_path = H.cache_dir .. "/cache"
     local ok, tokens = pcall(dofile, cache_token_path)
@@ -428,7 +428,7 @@ H.check_cache_token = function(name, token)
   end
 end
 
-H.sync_cache_tokens = function()
+function H.sync_cache_tokens()
   vim.fn.mkdir(H.cache_dir, "p")
   local cache_token_path = H.cache_dir .. "/cache"
   local cache_tbl = vim.inspect(H.import_cache_tokens)

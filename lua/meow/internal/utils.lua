@@ -12,20 +12,20 @@ local Utils = {}
 ---Display a notification.
 ---@param level "TRACE"|"DEBUG"|"INFO"|"WARN"|"ERROR"
 ---@param msg string
-Utils.notify = function(level, msg) vim.notify(msg, vim.log.levels[level]) end
+function Utils.notify(level, msg) vim.notify(msg, vim.log.levels[level]) end
 
 ---Display a notification with `string.format`.
 ---@param level "TRACE"|"DEBUG"|"INFO"|"WARN"|"ERROR"
 ---@param msg string
-Utils.notifyf = function(level, msg, ...) vim.notify(string.format(msg, ...), vim.log.levels[level]) end
+function Utils.notifyf(level, msg, ...) vim.notify(string.format(msg, ...), vim.log.levels[level]) end
 
 ---Traverses all direct submodules under the given module, including the root
 ---module if it exists.
 ---
----It accepts a callback that.takes = function the name and path of a module.
+---It accepts a callback that takes as arguments the name and path of a module.
 ---@param root string
 ---@param cb fun(mod:string,path:string)
-Utils.scan_submods = function(root, cb)
+function Utils.scan_submods(root, cb)
   local rootdir = string.gsub(root, "%.", "/")
   for _, rtp in ipairs(vim.api.nvim_list_runtime_paths()) do
     local dir = rtp .. "/lua/" .. rootdir
@@ -42,11 +42,11 @@ end
 
 ---Finds all available Lua modules in the given directory.
 ---
----It accepts a callback that.takes = function the name and path of a module.
+---It accepts a callback that takes as arguments the name and path of a module.
 ---@param dir string
 ---@param allow_empty boolean whether to return empty directory modules
 ---@param cb fun(mod:string,path:string)
-Utils.scan_dirmods = function(dir, allow_empty, cb)
+function Utils.scan_dirmods(dir, allow_empty, cb)
   local f = vim.uv.fs_scandir(dir)
   if not f then return end
   while true do
@@ -68,7 +68,7 @@ Utils.scan_dirmods = function(dir, allow_empty, cb)
 end
 
 ---@deprecated use `Utils.keymap` instead
-Utils.keyset = function(...)
+function Utils.keyset(...)
   Utils.notify("WARN", "`Utils.keyset` is deprecated, use `Utils.keymap` instead")
   Utils.keymap(...)
 end
@@ -76,7 +76,7 @@ end
 ---Sets Neovim keymaps using delcarative key tables.
 ---@overload fun(specs:MeoKeySpec[])
 ---@overload fun(bufnr:integer,specs:MeoKeySpec[])
-Utils.keymap = function(bufnr, specs)
+function Utils.keymap(bufnr, specs)
   if specs == nil then
     specs = bufnr
     bufnr = nil
@@ -96,7 +96,7 @@ end
 ---Creates Neovim autocmds using delcarative tables.
 ---@overload fun(specs:MeoAutocmdSpec[])
 ---@overload fun(group:string,specs:MeoAutocmdSpec[])
-Utils.autocmd = function(group, specs)
+function Utils.autocmd(group, specs)
   if specs == nil then
     specs = group
     group = nil

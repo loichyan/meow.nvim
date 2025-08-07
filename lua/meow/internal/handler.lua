@@ -13,7 +13,7 @@ H.by_event = {}
 H.by_ft = {}
 
 ---@param plugin MeoPlugin
-Handler.add = function(plugin)
+function Handler.add(plugin)
   -- Lazy-loading on requiring.
   if not plugin.module then
     -- Find modules to trigger the loading of the given plugin.
@@ -52,7 +52,7 @@ Handler.add = function(plugin)
 end
 
 ---@param loader fun(plugin:MeoPlugin)
-Handler.setup = function(loader)
+function Handler.setup(loader)
   -- Set up module handlers.
   local remaining_modules = vim.tbl_count(H.by_module)
   table.insert(package.loaders, 1, function(mod)
