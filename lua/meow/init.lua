@@ -1,13 +1,12 @@
 local Utils = require("meow.internal.utils")
+local Manager = require("meow.internal.manager")
 
 ---@class Meow
----@field config MeoOptions
----@field manager MeoPluginManager
 local Meow = {}
 
 local did_setup = false
 ---@param opts MeoOptions?
-function Meow.setup(opts)
+Meow.setup = function(opts)
   if did_setup then return end
   did_setup = true
   opts = opts or {}
@@ -17,19 +16,17 @@ function Meow.setup(opts)
   for k, v in pairs(opts) do
     Meow.config[k] = v
   end
-  Meow.manager = require("meow.internal.manager").new()
 
-  -- Register ourself.
-  if opts.specs then Meow.manager:add_many(opts.specs) end
-  if opts.enable_snapshot then Meow.manager:load_snap_from(MiniDeps.config.path.snapshot) end
-  Meow.manager:setup()
+  if opts.specs then Manager.add_many(opts.specs) end
+  if opts.enable_snapshot then Manager.load_snap_from(MiniDeps.config.path.snapshot) end
+  Manager.setup()
 
   if opts.patch_mini then
-    local get_session = MiniDeps.get_session
+    local orig_get_session = MiniDeps.get_session
     ---@diagnostic disable-next-line: duplicate-set-field
     MiniDeps.get_session = function(...)
-      Meow.manager:activate_all()
-      return get_session(...)
+      Manager.activate_all()
+      return orig_get_session(...)
     end
   end
 end
@@ -38,40 +35,27 @@ end
 -- Methods for Plugin Management --
 -----------------------------------
 
----Update plugins. See `:h MiniDeps.update()`.
-function Meow.update(...)
-  Meow.manager:activate_all()
+---Update plugins. See `:h MiniDeps.update`.
+---
+---It's not necessary to use this unless `MeoOptions.patch_mini` is disabled.
+Meow.update = function(...)
+  Manager.activate_all()
   MiniDeps.update(...)
-  if Meow.config.enable_snapshot then MiniDeps.snap_save(MiniDeps.config.path.snapshot) end
 end
 
----Clean plugins. See `:h MiniDeps.clean()`.
-function Meow.clean(...)
-  Meow.manager:activate_all()
+---Clean plugins. See `:h MiniDeps.clean`.
+---
+---It's not necessary to use this unless `MeoOptions.patch_mini` is disabled.
+Meow.clean = function(...)
+  Manager.activate_all()
   MiniDeps.clean(...)
 end
 
----Returns the plugin specified by name.
----@param name string
----@return MeoPlugin?
-function Meow.get(name) return Meow.manager:get(name) end
-
----Returns all registered plugins.
----@return MeoPlugin[]
-function Meow.plugins() return Meow.manager:plugins() end
-
----Returns all registered plugins.
----@param root string
----@param opts? {cache_token?:string}
-function Meow.import(root, opts) return Meow.manager:import(root, opts) end
-
----Adds plugins from the given spec(s).
----@param specs MeoSpecs
-function Meow.add(specs) return Meow.manager:add_many(specs) end
-
----Loads a plugin if it is not loaded or disabled.
----@param plugin string|MeoPlugin
-function Meow.load(plugin) return Meow.manager:load(plugin) end
+Meow.get = Manager.get
+Meow.plugins = Manager.plugins
+Meow.import = Manager.import
+Meow.add = Manager.add
+Meow.load = Manager.load
 
 ----------------------
 -- Useful Utilities --
