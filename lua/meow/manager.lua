@@ -1,5 +1,6 @@
 ---@diagnostic disable: invisible
 
+local Config = require("meow.config")
 local Utils = require("meow.utils")
 local Plugin = require("meow.plugin")
 local PluginState = Plugin._State
@@ -191,9 +192,11 @@ function Manager:plugins() return self._plugins end
 ---@param opts? {cache_token?:string}
 function Manager:import(root, opts)
   opts = opts or {}
+  local cache_token = opts.cache_token or Config.import_cache
+  if type(cache_token) == "function" then cache_token = cache_token() end
+  cache_token = cache_token or ""
 
   -- Try load form cache
-  local cache_token = opts.cache_token or ""
   local cache_name, cache_path
   if cache_token ~= "" then
     cache_name = root:gsub("%.", "_")
@@ -307,10 +310,7 @@ function Manager:add(spec)
     -- activated.
     local imports = spec.import
     if imports then
-      local cache_token = spec.import_cache
-      if type(cache_token) == "function" then cache_token = cache_token() end
-      local import_opts = { cache_token = cache_token }
-
+      local import_opts = { cache_token = spec.import_cache }
       if type(imports) == "table" then
         for _, mod in ipairs(imports) do
           self:import(mod, import_opts)

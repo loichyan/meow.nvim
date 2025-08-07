@@ -13,7 +13,10 @@ function Meow.setup(opts)
   opts = opts or {}
 
   _G.Meow = Meow
-  Meow.config = opts
+  Meow.config = require("meow.config")
+  for k, v in pairs(opts) do
+    Meow.config[k] = v
+  end
   Meow.manager = require("meow.manager").new()
 
   -- Register ourself.
