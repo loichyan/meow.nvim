@@ -8,8 +8,11 @@
 ---@field enable_snapshot? boolean
 ---The default token for import caches.
 ---@field import_cache? string|(fun():string)
+---Aliases for event handlers.
+---@field event_aliases? table<string,string[]>
 return {
   patch_mini = false,
   enable_snapshot = false,
   import_cache = nil,
+  event_aliases = {},
 }

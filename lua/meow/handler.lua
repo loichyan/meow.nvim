@@ -1,3 +1,4 @@
+local Config = require("meow.config")
 local Utils = require("meow.utils")
 
 ---@class MeoEventHandler
@@ -84,8 +85,10 @@ function Handler:setup()
   -- Set up event handlers.
   local by_very_lazy = self._by_event["VeryLazy"] -- Load them later
   self._by_event["VeryLazy"] = nil
+
+  local event_aliases = Config.event_aliases or {}
   for key, plugins in pairs(self._by_event) do
-    for _, ev in ipairs(self._manager.event_aliases[key] or { key }) do
+    for _, ev in ipairs(event_aliases[key] or { key }) do
       local name, pattern = string.match(ev, "(%w+) (%w+)")
       name = name or ev
       vim.api.nvim_create_autocmd(name, {
