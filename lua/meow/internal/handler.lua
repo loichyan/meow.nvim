@@ -1,5 +1,5 @@
-local Config = require("meow.config")
-local Utils = require("meow.utils")
+local Config = require("meow.internal.config")
+local Utils = require("meow.internal.utils")
 
 ---@class MeoEventHandler
 ---@field private _manager MeoPluginManager

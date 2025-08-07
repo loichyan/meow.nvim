@@ -1,4 +1,4 @@
-local Utils = require("meow.utils")
+local Utils = require("meow.internal.utils")
 
 ---@class Meow
 ---@field config MeoOptions
@@ -13,11 +13,11 @@ function Meow.setup(opts)
   opts = opts or {}
 
   _G.Meow = Meow
-  Meow.config = require("meow.config")
+  Meow.config = require("meow.internal.config")
   for k, v in pairs(opts) do
     Meow.config[k] = v
   end
-  Meow.manager = require("meow.manager").new()
+  Meow.manager = require("meow.internal.manager").new()
 
   -- Register ourself.
   if opts.specs then Meow.manager:add_many(opts.specs) end
@@ -77,7 +77,6 @@ function Meow.load(plugin) return Meow.manager:load(plugin) end
 -- Useful Utilities --
 ----------------------
 
-Meow.utils = Utils
 ---@diagnostic disable-next-line: deprecated
 Meow.keyset = Utils.keyset
 Meow.keymap = Utils.keymap

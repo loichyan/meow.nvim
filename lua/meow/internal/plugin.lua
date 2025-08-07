@@ -1,54 +1,7 @@
 ---@diagnostic disable: invisible
 
----Denotes whether a plugin is activated or loaded.
----
----Possible values are:
----  * ACTIVATED : Added to MiniDeps, but not loaded.
----  * LOADING   : In the loading progress.
----  * LOADED    : Loaded and initialized.
----  * DISABLED  : Disabled and never to be loaded.
----@private
----@enum MeoPluginState
-local PluginState = {
-  NONE = 0,
-  ACTIVATED = 1,
-  LOADING = 2,
-  LOADED = 3,
-  IGNORED = 4,
-  DISABLED = 5,
-}
-
----@type table<string,"primitive"|"list"|"table">
-local SPEC_VTYPES = {
-  source = "primitive",
-  checkout = "primitive",
-  monitor = "primitive",
-  hooks = "table",
-
-  shadow = "primitive",
-  enabled = "primitive",
-  cond = "primitive",
-  priority = "primitive",
-
-  lazy = "primitive",
-  event = "list",
-  ft = "list",
-  module = "list",
-
-  init = "primitive",
-  config = "primitive",
-
-  dependencies = "list",
-  import = "list",
-}
----@type string[]
-local MINI_SPEC_KEYS = {
-  "name",
-  "source",
-  "checkout",
-  "monitor",
-  "hooks",
-}
+local Constants = require("meow.internal.constants")
+local PluginState = Constants.PluginState
 
 ---@type MeoSpecCond
 local infer_shadow_state = function(plugin)
@@ -92,9 +45,6 @@ end
 ---@field private _state MeoPluginState
 local Plugin = {}
 
----@private
-Plugin._State = PluginState
-
 ---Creates a new plugin instance.
 ---@param name string
 ---@return MeoPlugin
@@ -113,7 +63,7 @@ end
 function Plugin:_update_spec(spec)
   -- Merge values of spec keys.
   for key, val in pairs(spec) do
-    local vtype = SPEC_VTYPES[key]
+    local vtype = Constants.SPEC_VTYPES[key]
     if not vtype then
     elseif vtype == "list" then
       if type(val) ~= "table" then val = { val } end
@@ -168,7 +118,7 @@ end
 ---@return table
 function Plugin:to_mini()
   local spec = {}
-  for _, key in ipairs(MINI_SPEC_KEYS) do
+  for _, key in ipairs(Constants.MINI_SPEC_KEYS) do
     spec[key] = self[key]
   end
   return spec

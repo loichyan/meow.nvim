@@ -1,9 +1,10 @@
 ---@diagnostic disable: invisible
 
-local Config = require("meow.config")
-local Utils = require("meow.utils")
-local Plugin = require("meow.plugin")
-local PluginState = Plugin._State
+local Config = require("meow.internal.config")
+local Constants = require("meow.internal.constants")
+local Plugin = require("meow.internal.plugin")
+local Utils = require("meow.internal.utils")
+local PluginState = Constants.PluginState
 
 ---Returns true if plugin `a` should be loaded before plugin `b`.
 ---
@@ -100,7 +101,7 @@ function Manager:setup()
 end
 
 function Manager:_really_setup()
-  local handler = require("meow.handler").new(self)
+  local handler = require("meow.internal.handler").new(self)
   ---@type MeoPlugin[]
   local opt_plugins = {}
 
