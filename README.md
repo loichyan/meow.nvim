@@ -1,6 +1,7 @@
 # 🐱 meow.nvim
 
-meow.nvim lets you manage plugins in the [lazy](https://github.com/folke/lazy.nvim) way with
+meow.nvim lets you manage plugins in the
+[lazy](https://github.com/folke/lazy.nvim) way with
 [mini.deps](https://github.com/echasnovski/mini.deps).
 
 ## 🚗 Quick start
@@ -42,7 +43,8 @@ end)
 
 After that, restart Neovim, and you're ready to go!
 
-For a real-world example, check out [Meowim](https://github.com/loichyan/Meowim).
+For a real-world example, check out
+[Meowim](https://github.com/loichyan/Meowim).
 
 ## ⚙️ Configuration
 
@@ -59,16 +61,18 @@ For a real-world example, check out [Meowim](https://github.com/loichyan/Meowim)
 ---@field enable_snapshot? boolean
 ```
 
-meow.nvim supports only a subset of lazy.nvim's plugin specification. For the complete list of
-supported keys, refer to [spec.lua](lua/meow/spec.lua).
+meow.nvim supports only a subset of lazy.nvim's plugin specification. For the
+complete list of supported keys, refer to [spec.lua](lua/meow/spec.lua).
 
 ## 🎯 Goals
 
-meow.nvim offers a declarative way to manage plugins, including lazy-loading, which is similar to
-lazy.nvim. It does not support plugin installation or cleanup, as those are handled by mini.deps.
-Additionally, meow.nvim mainly focuses on helping you build your own Neovim development environment
-(aka PDE, or [Personalized Development Environment](https://youtu.be/QMVIJhC9Veg)). Therefore, it
-will not support the full [`LazySpec`](https://lazy.folke.io/spec), which includes many features for
+meow.nvim offers a declarative way to manage plugins, including lazy-loading,
+which is similar to lazy.nvim. It does not support plugin installation or
+cleanup, as those are handled by mini.deps. Additionally, meow.nvim mainly
+focuses on helping you build your own Neovim development environment (aka PDE,
+or [Personalized Development Environment](https://youtu.be/QMVIJhC9Veg)).
+Therefore, it will not support the full
+[`LazySpec`](https://lazy.folke.io/spec), which includes many features for
 creating extendable IDE distributions.
 
 ## ⚖️ License
