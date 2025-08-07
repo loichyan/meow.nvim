@@ -240,6 +240,8 @@ Manager.add = function(spec)
   -- Set the source to the possible URI if no alternative source is provided.
   if not plugin.source then plugin.source = source end
 
+  if name == "meow.nvim" or name == "mini.nvim" then plugin._state = PluginState.ACTIVATED end
+
   return plugin
 end
 
