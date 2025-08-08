@@ -289,7 +289,7 @@ end
 ---registered lazy-loading plugins before updating or cleaning.
 function Manager.activate_all()
   for _, plugin in ipairs(H.plugins) do
-    H.activate(plugin)
+    Manager.activate(plugin)
   end
 end
 
