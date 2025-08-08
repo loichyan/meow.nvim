@@ -1,6 +1,14 @@
 ---@meta _
 
----@alias MeoSpecs MeoSpec[]|MeoSpec
+---A single spec or a list of specs to load.
+---
+---Each module specified in `MeoSpec.import` must return a table of this type.
+---When constructing a spec list, it is acceptable to include named fields. If
+---the first field of a table is determined to be a valid spec, then that table
+---is considered as a list of specs and any named field of it is silently
+---ignored. This feature is especially useful when there are additional exports
+---in a module that returns spec(s).
+---@alias MeoSpecImport MeoSpec[]|MeoSpec
 
 ---@class MeoSpec
 ---The identifier of this plugin.

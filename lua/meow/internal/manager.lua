@@ -190,7 +190,7 @@ function Manager.import(root, opts)
 end
 
 ---Adds one or more plugins from the given spec(s).
----@param specs MeoSpecs
+---@param specs MeoSpecImport
 function Manager.add_many(specs)
   if #specs > 1 or type(specs[1]) == "table" then
     ---@cast specs MeoSpec[]

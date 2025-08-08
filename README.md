@@ -53,7 +53,7 @@ For a real-world example, check out
 ```lua
 ---@class MeoOptions
 ---Root spec(s) to load. Imports of other modules are usually specified here.
----@field specs? MeoSpecs
+---@field specs? MeoSpecImport
 ---Perform a few patches on MiniDeps so that all enabled plugins can be
 ---recognized correctly during updating or cleaning.
 ---@field patch_mini? boolean
