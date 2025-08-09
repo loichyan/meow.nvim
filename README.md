@@ -46,23 +46,35 @@ After that, restart Neovim, and you're ready to go!
 For a real-world example, check out
 [Meowim](https://github.com/loichyan/Meowim).
 
+## 📋 Requirements
+
+- [Neovim](https://github.com/neovim/neovim) >= **0.11**
+- [mini.nvim](https://github.com/echasnovski/mini.nvim) (may not work properly
+  with partial modules)
+
 ## ⚙️ Configuration
 
-`Meow.setup()` accepts a table of the following definition:
+### Setup
 
-```lua
----@class MeoOptions
----Root spec(s) to load. Imports of other modules are usually specified here.
----@field specs? MeoSpecImport
----Perform a few patches on MiniDeps so that all enabled plugins can be
----recognized correctly during updating or cleaning.
----@field patch_mini? boolean
----Whether to enable automatic snapshot generation. The default set to false.
----@field enable_snapshot? boolean
-```
+Call `require('meow').setup(<MeoOptions>)` to initialize the plugin. For all
+supported options, refer to [options.lua](lua/meow/options.lua).
 
-meow.nvim supports only a subset of lazy.nvim's plugin specification. For the
-complete list of supported keys, refer to [spec.lua](lua/meow/spec.lua).
+### Plugin spec
+
+meow.nvim supports only a subset of lazy.nvim's plugin specification, along with
+some fields defined in mini.deps. For the complete list of supported properties,
+refer to [spec.lua](lua/meow/spec.lua).
+
+### Shadow plugins
+
+Shadow plugins are the core feature of this plugin compared to lazy.nvim. They
+primarily address the issue described in
+[folke/lazy.nvim#1610](https://github.com/folke/lazy.nvim/issues/1610). A shadow
+plugin does not have a source on the disk and can therefore be considered a
+configuration-only plugin. Apart from this, it is almost identical to normal
+plugins—you can supply a `config` function, set lazy-loading events, specify
+additional dependencies, and so on. This feature is designed to work with
+mini.nvim: install the entire plugin and then load different modules as needed.
 
 ## 🎯 Goals
 
