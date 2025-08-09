@@ -20,7 +20,7 @@ local PluginState = Constants.PluginState
 ---@field dependencies? (string|MeoSpec)[]
 ---@field import? string[]
 ---The installation location of this plugin.
----@field path? string
+---@field private _path string
 ---Whether added as a dependency.
 ---@field private _is_dep? boolean
 ---A set of dependency names.
@@ -35,44 +35,36 @@ local Plugin = {}
 
 ---Creates a new plugin instance.
 ---@param name string
+---@param idx integer
 ---@return MeoPlugin
-function Plugin.new(name)
+function Plugin.new(name, idx)
   return setmetatable({
     name = name,
     priority = 50,
+    _idx = idx,
     _level = 0,
-    _state = PluginState.NONE,
   }, { __index = Plugin })
 end
 
----Updates the properties of the given plugin from a spec table.
----@private
----@param spec MeoSpec
-function Plugin:_update_spec(spec)
-  -- Merge values of spec keys.
-  for key, val in pairs(spec) do
-    local vtype = Constants.SPEC_VTYPES[key]
-    if not vtype then
-    elseif vtype == "list" then
-      if type(val) ~= "table" then val = { val } end
-      self[key] = vim.list_extend(self[key] or {}, val)
-    elseif vtype == "table" then
-      self[key] = vim.tbl_extend("force", self[key] or {}, val)
-    else
-      self[key] = val
-    end
+---Returns the installation location of this plugin.
+---
+---This function always returns a path, whether or not the plugin is a shadow
+---plugin install. Therefore, the caller should perform necessary checks before
+---asserting the existence of the returned path.
+---@return string
+function Plugin:path()
+  if not self._path then
+    self._path = vim.fs.normalize(MiniDeps.config.path.package .. "/pack/deps/opt/" .. self.name)
   end
-
-  -- Apply property aliases.
-  if spec.build then
-    self.hooks = self.hooks or {}
-    self.hooks.post_checkout = spec.build
-  end
+  return self._path
 end
 
 ---Returns whether this plugin is loaded.
 ---@return boolean
 function Plugin:is_loaded() return self._state == PluginState.LOADED end
+
+---Returns whether this plugin will be loaded.
+function Plugin:will_load() return self:_get_state() < PluginState.IGNORED end
 
 ---Returns `shadow == true`.
 ---@return boolean
@@ -90,6 +82,7 @@ function Plugin:is_ignored() return not self:_get_cond("cond", true) end
 function Plugin:is_lazy() return self:_get_cond("lazy", Constants.default_spec_lazy) end
 
 ---Resolves the specified conditional field.
+---@private
 ---@param key "shadow"|"enabled"|"cond"|"lazy"
 ---@param default MeoSpecCond
 ---@return boolean
@@ -102,14 +95,22 @@ function Plugin:_get_cond(key, default)
   return self[key]
 end
 
----Converts the given plugin to a spec acceptable to MiniDeps.
----@return table
-function Plugin:to_mini()
-  local spec = {}
-  for _, key in ipairs(Constants.MINI_SPEC_KEYS) do
-    spec[key] = self[key]
+---Infers the state of this plugin.
+---@private
+---@return MeoPluginState
+function Plugin:_get_state()
+  if self._state then
+  elseif not self:is_enabled() then
+    self._state = PluginState.DISABLED
+  elseif self:is_ignored() then
+    self._state = PluginState.IGNORED
+  -- Skip unnecessary activations.
+  elseif self:is_shadow() then
+    self._state = PluginState.ACTIVATED
+  else
+    self._state = PluginState.NONE
   end
-  return spec
+  return self._state
 end
 
 return Plugin

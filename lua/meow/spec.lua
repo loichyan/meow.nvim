@@ -70,8 +70,8 @@
 ---@field config? fun(self:MeoPlugin)
 ---A list of plugins that should be loaded before this.
 ---
----For convenience, a plugin spec, which is merged into existing specs if this
----plugin is enabled, can be specified instead of a plugin name.
+---Each dependency must be either the name of a registered plugin or the spec
+---for a plugin that is **not registered** yet.
 ---@field dependencies? (string|MeoSpec)[]
 ---A list of module paths to load additional specs.
 ---

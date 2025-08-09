@@ -18,9 +18,9 @@ function Handler.add(plugin)
   if not plugin.module then
     -- Find modules to trigger the loading of the given plugin.
     plugin.module = { plugin.name }
-    if plugin.path then
+    if not plugin:is_shadow() then
       Utils.scan_dirmods(
-        plugin.path .. "/lua",
+        plugin:path() .. "/lua",
         true,
         function(mod) table.insert(plugin.module, mod) end
       )

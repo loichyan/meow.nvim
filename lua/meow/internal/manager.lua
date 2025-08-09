@@ -30,46 +30,36 @@ function Manager.setup()
   did_setup = true
 
   local Handler = require("meow.internal.handler")
-  ---@type MeoPlugin[]
-  local opt_plugins = {}
+  ---@type MeoPlugin[], MeoPlugin[]
+  local init_plugins, opt_plugins = {}, {}
 
   -- 1) Resolve imports and dependencies.
   local visited = 1
   while visited <= #H.plugins do
-    -- Collect start plugins to sort them so that they are loaded in the
-    -- desired order.
+    -- Collect start plugins and then load them in appropriate order.
     ---@type MeoPlugin[]
     local start_plugins = {}
     repeat
       local plugin = H.plugins[visited]
       visited = visited + 1
+      if not plugin:will_load() then goto continue end
 
-      if plugin._state ~= PluginState.NONE then
-      elseif not plugin:is_enabled() then
-        plugin._state = PluginState.DISABLED
-      elseif plugin:is_ignored() then
-        plugin._state = PluginState.IGNORED
+      -- Import all dependency specs.
+      H.import_dependencies(plugin)
+      if plugin:is_lazy() then
+        table.insert(opt_plugins, plugin)
       else
-        if not plugin:is_shadow() then
-          plugin.path =
-            vim.fs.normalize(MiniDeps.config.path.package .. "/pack/deps/opt/" .. plugin.name)
-        end
-
-        if plugin.init then plugin:init() end
-        -- Import all dependency specs.
-        H.import_dependencies(plugin)
-        if plugin:is_lazy() then
-          table.insert(opt_plugins, plugin)
-        else
-          table.insert(start_plugins, plugin)
-        end
+        table.insert(start_plugins, plugin)
       end
+
+      ::continue::
     until visited > #H.plugins
 
     table.sort(start_plugins, H.plugin_ordering)
     for _, plugin in ipairs(start_plugins) do
-      -- Load the plugin before resolving its imports as the import paths
-      -- may not exist if the plugin not installed.
+      if plugin.init then table.insert(init_plugins, plugin) end
+      -- Load the plugin before resolving its imports as the imports may not
+      -- exist until the plugin is installed.
       Manager.load(plugin)
       if plugin.import then
         for _, mod in ipairs(plugin.import) do
@@ -79,13 +69,17 @@ function Manager.setup()
     end
   end
 
+  for _, plugin in ipairs(init_plugins) do
+    plugin:init()
+  end
+
   -- 2) Lazy-load opt plugins.
   for _, plugin in ipairs(opt_plugins) do
     if plugin.import then
-      Utils.notify("ERROR", "imports of lazy plugins are not supported: " .. plugin.name)
+      Utils.notifyf("WARN", "imports of lazy plugin '%s' are not supported", plugin.name)
     end
 
-    if not plugin.path or vim.uv.fs_stat(plugin.path) then
+    if plugin:is_shadow() or vim.uv.fs_stat(plugin:path()) then
       Handler.add(plugin)
     else
       -- If a plugin is not installed, defer the setup of handlers.
@@ -99,7 +93,7 @@ function Manager.setup()
   -- 3) Setup lazy handlers
   Handler.setup(Manager.load)
   -- 4) Sync cache tokens if updated
-  if H.cache_expired then vim.schedule(H.sync_cache_tokens) end
+  if H.cache_expired then MiniDeps.later(H.sync_cache_tokens) end
 end
 
 ---Returns the plugin specified by name.
@@ -117,8 +111,7 @@ function Manager.plugins() return vim.deepcopy(H.plugins) end
 ---@param root string
 ---@param opts? {cache_token?:string}
 function Manager.import(root, opts)
-  opts = opts or {}
-  local cache_token = opts.cache_token or Config.import_cache
+  local cache_token = (opts or {}).cache_token or Config.import_cache
   if type(cache_token) == "function" then cache_token = cache_token() end
   cache_token = cache_token or ""
 
@@ -139,9 +132,9 @@ function Manager.import(root, opts)
   local mods = {}
   Utils.scan_submods(root, function(mod, path) table.insert(mods, { mod, path }) end)
   if #mods == 0 then error("failed to find imports from: " .. root) end
-  -- Ensure that all modules are imported in alphabetical order
-  table.sort(mods, function(a, b) return a[1] < b[1] end)
 
+  -- Load each module in alphabetical order
+  table.sort(mods, function(a, b) return a[1] < b[1] end)
   for _, m in ipairs(mods) do
     local mod, path = m[1], m[2]
     ---Import specs from a module, reporting errors if failed
@@ -157,12 +150,16 @@ function Manager.import(root, opts)
         Manager.add_many(specs)
       end
     end)
-    if not ok then Utils.notifyf("ERROR", "failed to import module %s: %s", mod, err) end
+    -- Skip caching as error occurs.
+    if not ok then
+      cache_token = ""
+      Utils.notifyf("ERROR", "failed to import module %s: %s", mod, err)
+    end
   end
 
   if cache_token ~= "" then
     -- Defer cache rebuilding to speed up startup
-    vim.schedule(function()
+    MiniDeps.later(function()
       vim.fn.mkdir(H.cache_dir, "p")
       local cache_file = assert(io.open(cache_path, "w"))
 
@@ -192,13 +189,10 @@ end
 ---Adds one or more plugins from the given spec(s).
 ---@param specs MeoSpecImport
 function Manager.add_many(specs)
-  if #specs > 1 or type(specs[1]) == "table" then
-    ---@cast specs MeoSpec[]
-    for _, spec in ipairs(specs) do
-      Manager.add(spec)
-    end
-  else
-    Manager.add(specs)
+  if type(specs[1]) ~= "table" then specs = { specs } end
+  ---@cast specs MeoSpec[]
+  for _, spec in ipairs(specs) do
+    Manager.add(spec)
   end
 end
 
@@ -209,41 +203,49 @@ end
 function Manager.add(spec)
   if not spec[1] then
     -- If the spec contains only an import field, resolve the import
-    -- immediately; otherwise, defer the resolution after this plugin is
-    -- activated.
+    -- immediately; otherwise, defer that until it is installed.
     local imports = spec.import
-    if imports then
+    if type(imports) ~= "table" then imports = { imports } end
+    ---@cast imports string[]
+    if #imports > 0 then
       local import_opts = { cache_token = spec.import_cache }
-      if type(imports) == "table" then
-        for _, mod in ipairs(imports) do
-          Manager.import(mod, import_opts)
-        end
-      else
-        Manager.import(imports, import_opts)
+      for _, mod in ipairs(imports) do
+        Manager.import(mod, import_opts)
       end
     end
     return
   end
 
   local name, source = H.parse_plugin_name(spec[1])
-  local plugin = H.plugin_map[name]
-  if not plugin then
-    plugin = Plugin.new(name)
-    plugin._idx = #H.plugins
-    table.insert(H.plugins, plugin)
-    H.plugin_map[name] = plugin
+  if H.plugin_map[name] then
+    Utils.notifyf("ERROR", "attempted to register a duplicate plugin", name)
+    return
   end
 
-  -- Update plugin properties.
-  plugin:_update_spec(spec)
+  -- Register the plugin.
+  local plugin = Plugin.new(name, #H.plugins)
+  table.insert(H.plugins, plugin)
+  H.plugin_map[name] = plugin
 
-  -- Set the source to the possible URI if no alternative source is provided.
+  -- Merge the value of each spec key.
+  for key, val in pairs(spec) do
+    local vtype = Constants.SPEC_VTYPES[key]
+    if not vtype then
+    elseif vtype == "list" then
+      plugin[key] = type(val) ~= "table" and { val } or val
+    else
+      plugin[key] = val
+    end
+  end
+
+  -- Resolve property aliases.
+  if spec.build then
+    plugin.hooks = plugin.hooks or {}
+    plugin.hooks.post_checkout = spec.build
+  end
+
+  -- Update the source if not provided.
   if not plugin.source then plugin.source = source end
-
-  -- Skip unnecessary activations.
-  if not plugin._state and (name == "meow.nvim" or Constants.is_mini(name)) then
-    plugin._state = PluginState.ACTIVATED
-  end
 
   return plugin
 end
@@ -251,18 +253,21 @@ end
 ---Loads a plugin if it is not loaded or disabled.
 ---@param plugin string|MeoPlugin
 function Manager.load(plugin)
+  -- Resolve the plugin by name.
   if type(plugin) == "string" then
     local p = Manager.get(plugin)
     if not p then
-      Utils.notify("ERROR", "attempted to load an undefined plugin " .. plugin)
+      Utils.notifyf("ERROR", "attempted to load an undefined plugin '%s'", plugin)
       return
     end
     plugin = p
   end
 
-  if plugin._state >= PluginState.IGNORED then
-    Utils.notifyf("ERROR", "attempted to load a disabled plugin '%s'", plugin.name)
-  elseif plugin._state >= PluginState.LOADING then
+  -- Ensure the plugin should be loaded.
+  if plugin:_get_state() >= PluginState.LOADING then
+    if not plugin:will_load() then
+      Utils.notifyf("ERROR", "attempted to load a disabled plugin '%s'", plugin.name)
+    end
     return
   end
 
@@ -280,12 +285,27 @@ end
 ---Adds the given to MiniDeps.
 ---@param plugin MeoPlugin
 function Manager.activate(plugin)
-  if plugin._state >= PluginState.ACTIVATED and plugin._state ~= PluginState.IGNORED then return end
-  -- Apply snapshot.
-  plugin.checkout = H.snapshot[plugin.name] or plugin.checkout
-  if not plugin:is_shadow() then MiniDeps.add(plugin:to_mini()) end
+  -- Install the plugin unless completely disabled.
+  local state = plugin:_get_state()
+  if state >= PluginState.ACTIVATED and state ~= PluginState.IGNORED then return end
 
-  if plugin._state < PluginState.ACTIVATED then plugin._state = PluginState.ACTIVATED end
+  ---Convert the given plugin to a spec acceptable to MiniDeps.
+  local minispec = {}
+  for _, key in ipairs(Constants.MINI_SPEC_KEYS) do
+    minispec[key] = plugin[key]
+  end
+  -- Ensure the snapped version if used.
+  minispec.checkout = H.snapshot[plugin.name] or minispec.checkout
+
+  -- Defer activations for plugins that must have been loaded already, as they
+  -- can slightly slow down the startup.
+  if plugin.name == "meow.nvim" or plugin.name == "mini.nvim" then
+    MiniDeps.later(function() MiniDeps.add(minispec) end)
+  else
+    MiniDeps.add(minispec)
+  end
+
+  if state < PluginState.ACTIVATED then plugin._state = PluginState.ACTIVATED end
 end
 
 ---Adds all plugins to MiniDeps, mainly used to to make MiniDeps recognize all
@@ -303,7 +323,7 @@ function Manager.load_snap_from(path)
   if not ok then
     Utils.notifyf("ERROR", "failed to load snapshot from '%s': %s", path, snap)
   elseif type(snap) ~= "table" then
-    Utils.notifyf("ERROR", "snapshot from '%s' is invalid")
+    Utils.notifyf("ERROR", "snapshot returned from '%s' is invalid: %s", path, vim.inspect(snap))
   else
     -- Defer loading snapshots until all imports are resolved.
     for k, v in pairs(snap) do
@@ -340,10 +360,10 @@ function H.import_dependencies(plugin)
   end
 end
 
----Resolves dependencies that are not loaded and required by the given plugin.
+---Resolves dependencies that are required by the given plugin.
 ---
----The returned list contains the plugin itself at the end and is sorted in an
----appropriate loading order.
+---The returned list exlucdes any already loaded plugins and is sorted by
+---appropriate order. It contains the given plugin itself as well.
 ---@param plugin MeoPlugin
 ---@return MeoPlugin[]
 function H.resolve_dependencies(plugin)
@@ -359,7 +379,7 @@ end
 ---@param plugin MeoPlugin
 function H.collect_dependencies(result, plugin)
   -- Skip if resolved, loaded or disabled.
-  if plugin._level ~= 0 or plugin._state >= PluginState.LOADING then return end
+  if plugin._level ~= 0 or plugin:_get_state() >= PluginState.LOADING then return end
 
   if not plugin._deps then
     plugin._level = 1
