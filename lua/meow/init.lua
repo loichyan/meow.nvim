@@ -24,11 +24,13 @@ function Meow.setup(opts)
   Manager.setup()
 
   if opts.patch_mini then
-    local orig_get_session = MiniDeps.get_session
-    ---@diagnostic disable-next-line: duplicate-set-field
-    MiniDeps.get_session = function(...)
-      Manager.activate_all()
-      return orig_get_session(...)
+    local orig = {}
+    for _, func in ipairs({ "get_session", "update", "clean" }) do
+      orig[func] = MiniDeps[func]
+      MiniDeps[func] = function(...)
+        Manager.activate_all()
+        return orig[func](...)
+      end
     end
   end
 end
