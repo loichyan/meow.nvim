@@ -299,7 +299,7 @@ function Manager.activate(plugin)
 
   -- Defer activations for plugins that must have been loaded already, as they
   -- can slightly slow down the startup.
-  if plugin.name == "meow.nvim" or plugin.name == "mini.nvim" then
+  if vim.v.vim_did_enter == 0 and (plugin.name == "meow.nvim" or plugin.name == "mini.nvim") then
     MiniDeps.later(function() MiniDeps.add(minispec) end)
   else
     MiniDeps.add(minispec)
