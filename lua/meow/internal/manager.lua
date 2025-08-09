@@ -24,10 +24,9 @@ H.snapshot = {}
 ---
 ---CAVEAT: This function may only be called once, after which no modifications
 ---may be made to the instance or any added plugins.
-local did_setup = false
 function Manager.setup()
-  if did_setup then return end
-  did_setup = true
+  if H.did_setup then return end
+  H.did_setup = true
 
   local Handler = require("meow.internal.handler")
   ---@type MeoPlugin[], MeoPlugin[]
@@ -68,12 +67,17 @@ function Manager.setup()
       end
     end
   end
+  -- Reject new plugins
+  local freeze = function() error("new plugins are not allowed after setup") end
+  setmetatable(H.plugins, { __newindex = freeze })
+  setmetatable(H.plugin_map, { __newindex = freeze })
 
+  -- 2) Run plugin initializors.
   for _, plugin in ipairs(init_plugins) do
     plugin:init()
   end
 
-  -- 2) Lazy-load opt plugins.
+  -- 3) Lazy-load opt plugins.
   for _, plugin in ipairs(opt_plugins) do
     if plugin.import then
       Utils.notifyf("WARN", "imports of lazy plugin '%s' are not supported", plugin.name)
@@ -90,9 +94,10 @@ function Manager.setup()
     end
   end
 
-  -- 3) Setup lazy handlers
+  -- 4) Setup lazy handlers
   Handler.setup(Manager.load)
-  -- 4) Sync cache tokens if updated
+
+  -- 5) Sync cache tokens if updated
   if H.cache_expired then MiniDeps.later(H.sync_cache_tokens) end
 end
 
@@ -311,6 +316,8 @@ end
 ---Adds all plugins to MiniDeps, mainly used to to make MiniDeps recognize all
 ---registered lazy-loading plugins before updating or cleaning.
 function Manager.activate_all()
+  if H.activated_all then return end
+  H.activated_all = true
   for _, plugin in ipairs(H.plugins) do
     Manager.activate(plugin)
   end
