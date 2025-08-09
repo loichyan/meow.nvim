@@ -1,17 +1,5 @@
----@diagnostic disable: invisible
-
 local Constants = require("meow.internal.constants")
 local PluginState = Constants.PluginState
-
----@type MeoSpecCond
-local infer_shadow_state = function(plugin)
-  return plugin.name ~= "mini.nvim" and vim.startswith(plugin.name, "mini.")
-end
-
----@type MeoSpecCond
-local infer_lazy_state = function(plugin)
-  return not not (plugin._is_dep or plugin.event or plugin.ft or plugin.module)
-end
 
 ---@class MeoPlugin
 ---@field name string
@@ -88,7 +76,7 @@ function Plugin:is_loaded() return self._state == PluginState.LOADED end
 
 ---Returns `shadow == true`.
 ---@return boolean
-function Plugin:is_shadow() return self:_get_cond("shadow", infer_shadow_state) end
+function Plugin:is_shadow() return self:_get_cond("shadow", Constants.default_spec_shadow) end
 
 ---Returns `enabled == true`.
 ---@return boolean
@@ -99,7 +87,7 @@ function Plugin:is_enabled() return self:_get_cond("enabled", true) end
 function Plugin:is_ignored() return not self:_get_cond("cond", true) end
 
 ---Returns `lazy == true`.
-function Plugin:is_lazy() return self:_get_cond("lazy", infer_lazy_state) end
+function Plugin:is_lazy() return self:_get_cond("lazy", Constants.default_spec_lazy) end
 
 ---Resolves the specified conditional field.
 ---@param key "shadow"|"enabled"|"cond"|"lazy"

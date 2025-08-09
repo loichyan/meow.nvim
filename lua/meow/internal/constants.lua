@@ -1,5 +1,7 @@
 local Constants = {}
 
+---@diagnostic disable: invisible
+
 ---Denotes whether a plugin is activated or loaded.
 ---
 ---Possible values are:
@@ -49,5 +51,19 @@ Constants.MINI_SPEC_KEYS = {
   "monitor",
   "hooks",
 }
+
+Constants.cache_version = 1
+
+Constants.is_mini = function(string) return vim.startswith(string, "mini.") end
+
+---@type MeoSpecCond
+Constants.default_spec_shadow = function(plugin)
+  return Constants.is_mini(plugin.name) and plugin.name ~= "mini.nvim"
+end
+
+---@type MeoSpecCond
+Constants.default_spec_lazy = function(plugin)
+  return not not (plugin._is_dep or plugin.event or plugin.ft or plugin.module)
+end
 
 return Constants

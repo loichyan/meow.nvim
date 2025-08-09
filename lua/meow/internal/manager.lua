@@ -99,7 +99,7 @@ function Manager.setup()
   -- 3) Setup lazy handlers
   Handler.setup(Manager.load)
   -- 4) Sync cache tokens if updated
-  if H.cache_dirty then vim.schedule(H.sync_cache_tokens) end
+  if H.cache_expired then vim.schedule(H.sync_cache_tokens) end
 end
 
 ---Returns the plugin specified by name.
@@ -240,7 +240,10 @@ function Manager.add(spec)
   -- Set the source to the possible URI if no alternative source is provided.
   if not plugin.source then plugin.source = source end
 
-  if name == "meow.nvim" or name == "mini.nvim" then plugin._state = PluginState.ACTIVATED end
+  -- Skip unnecessary activations.
+  if not plugin._state and (name == "meow.nvim" or Constants.is_mini(name)) then
+    plugin._state = PluginState.ACTIVATED
+  end
 
   return plugin
 end
@@ -413,17 +416,22 @@ H.cache_dir = vim.fn.stdpath("cache") .. "/meow"
 ---@param token string
 ---@return boolean
 function H.check_cache_token(name, token)
-  if not H.import_cache_tokens then
-    local cache_token_path = H.cache_dir .. "/cache"
-    local ok, tokens = pcall(dofile, cache_token_path)
-    ---@type table<string,string>
-    H.import_cache_tokens = ok and tokens or {}
+  -- Lazy-load cache manifest
+  ---@type table<string,string>|{["$version"]:number}
+  local tokens = H.cache_tokens
+  if not tokens then
+    local ok, cache_token_path = nil, H.cache_dir .. "/cache"
+    ok, tokens = pcall(dofile, cache_token_path)
+    tokens = ok and tokens or {}
+    H.cache_tokens = tokens
   end
-  if H.import_cache_tokens[name] == token then
+  -- Ensure both the version and the token match
+  if tokens[name] == token and tokens["$version"] == Constants.cache_version then
     return true
   else
-    H.import_cache_tokens[name] = token
-    H.cache_dirty = true
+    tokens[name] = token
+    tokens["$version"] = Constants.cache_version
+    H.cache_expired = true
     return false
   end
 end
@@ -431,7 +439,7 @@ end
 function H.sync_cache_tokens()
   vim.fn.mkdir(H.cache_dir, "p")
   local cache_token_path = H.cache_dir .. "/cache"
-  local cache_tbl = vim.inspect(H.import_cache_tokens)
+  local cache_tbl = vim.inspect(H.cache_tokens)
   assert(assert(io.open(cache_token_path, "w")):write("return ", cache_tbl))
 end
 

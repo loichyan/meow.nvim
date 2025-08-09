@@ -1,8 +1,6 @@
 local Utils = require("meow.internal.utils")
 local Manager = require("meow.internal.manager")
 
----@module "mini.deps"
-
 ---@class Meow
 local Meow = {}
 
