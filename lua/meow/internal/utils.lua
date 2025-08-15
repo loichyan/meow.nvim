@@ -78,12 +78,13 @@ function Utils.keymap(bufnr, specs)
   ---@cast bufnr integer?
   ---@cast specs MeoKeySpec[]
 
+  local map = vim.keymap.set
   for _, spec in ipairs(specs) do
     local opts = vim.tbl_extend("keep", spec, { buffer = bufnr })
     local lhs, rhs, mode = opts[1], opts[2], opts.mode
     opts[1], opts[2], opts.mode = nil, nil, nil
     mode = mode or "n"
-    vim.keymap.set(mode, lhs, rhs, opts)
+    map(mode, lhs, rhs, opts)
   end
 end
 
@@ -100,11 +101,12 @@ function Utils.autocmd(group, specs)
   end
   ---@cast specs MeoAutocmdSpec[]
 
+  local au = vim.api.nvim_create_autocmd
   for _, spec in ipairs(specs) do
     local opts = vim.tbl_extend("keep", spec, { group = group })
     local event = opts.event
     opts.event = nil
-    vim.api.nvim_create_autocmd(event, opts)
+    au(event, opts)
   end
 end
 
