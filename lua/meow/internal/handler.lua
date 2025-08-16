@@ -1,4 +1,5 @@
 local Config = require("meow.internal.config")
+local Constants = require("meow.internal.constants")
 local Utils = require("meow.internal.utils")
 
 ---@class MeoEventHandler
@@ -17,13 +18,17 @@ function Handler.add(plugin)
   -- Lazy-loading on requiring.
   if not plugin.module then
     -- Find modules to trigger the loading of the given plugin.
-    plugin.module = { plugin.name }
-    if not plugin:is_shadow() then
-      Utils.scan_dirmods(
-        plugin:path() .. "/lua",
-        true,
-        function(mod) table.insert(plugin.module, mod) end
-      )
+    if Constants.is_mini(plugin.name) then
+      plugin.module = { plugin.name }
+    else
+      plugin.module = {}
+      if not plugin:is_shadow() then
+        Utils.scan_dirmods(
+          plugin:path() .. "/lua",
+          true,
+          function(mod) table.insert(plugin.module, mod) end
+        )
+      end
     end
   end
   if plugin.module then
