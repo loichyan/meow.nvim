@@ -8,16 +8,38 @@
 
 ---@class MeoUtils
 local Utils = {}
+local H = {}
+
+function Utils.setup()
+  H.pending_notif = {}
+  vim.api.nvim_create_autocmd("UIEnter", {
+    desc = "Fire pending notifications",
+    once = true,
+    callback = function()
+      for _, notif in ipairs(H.pending_notif) do
+        vim.notify(unpack(notif))
+      end
+      H.pending_notif = nil
+    end,
+  })
+end
 
 ---Display a notification.
 ---@param level "TRACE"|"DEBUG"|"INFO"|"WARN"|"ERROR"
 ---@param msg string
-function Utils.notify(level, msg) vim.notify(msg, vim.log.levels[level]) end
+function Utils.notify(level, msg)
+  local ilevel = vim.log.levels[level]
+  if H.pending_notif then
+    table.insert(H.pending_notif, { msg, ilevel })
+  else
+    vim.notify(msg, ilevel)
+  end
+end
 
 ---Display a notification with `string.format`.
 ---@param level "TRACE"|"DEBUG"|"INFO"|"WARN"|"ERROR"
 ---@param msg string
-function Utils.notifyf(level, msg, ...) vim.notify(string.format(msg, ...), vim.log.levels[level]) end
+function Utils.notifyf(level, msg, ...) Utils.notify(level, string.format(msg, ...)) end
 
 ---Traverses all direct submodules under the given module, including the root
 ---module if it exists.

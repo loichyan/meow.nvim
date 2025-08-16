@@ -14,6 +14,8 @@ function Meow.setup(opts)
   opts = opts or {}
 
   _G.Meow = Meow
+  Utils.setup()
+
   Meow.config = require("meow.internal.config")
   for k, v in pairs(opts) do
     Meow.config[k] = v
