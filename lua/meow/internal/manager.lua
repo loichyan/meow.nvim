@@ -136,7 +136,10 @@ function Manager.import(root, opts)
   ---@type {[1]:string,[2]:string}[]
   local mods = {}
   Utils.scan_submods(root, function(mod, path) table.insert(mods, { mod, path }) end)
-  if #mods == 0 then error("failed to find imports from: " .. root) end
+  if #mods == 0 then
+    Utils.notifyf("WARN", "import root '%s' is empty", root)
+    return
+  end
 
   -- Load each module in alphabetical order
   table.sort(mods, function(a, b) return a[1] < b[1] end)
@@ -396,9 +399,13 @@ function H.collect_dependencies(result, plugin)
     for dep_name, _ in pairs(plugin._deps) do
       local dep = H.plugin_map[dep_name]
       if not dep then
-        error(("found undefined dependency: %s"):format(dep_name))
+        if dep_name:find("/") then
+          Utils.notifyf("ERROR", "dependency '%s' must be defined as a spec", dep_name)
+        else
+          Utils.notifyf("ERROR", "found undefined dependency: %s", dep_name)
+        end
       elseif dep._level == -1 then
-        error(("found circular dependencies: %s and %s"):format(plugin.name, dep_name))
+        Utils.notifyf("ERROR", "found circular dependency: %s and %s", plugin.name, dep_name)
       else
         H.collect_dependencies(result, dep)
         dep_level = math.max(dep_level, dep._level)
