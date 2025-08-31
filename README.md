@@ -18,7 +18,7 @@ if not vim.uv.fs_stat(mini_path) then
         "git",
         "clone",
         "--filter=blob:none",
-        "https://github.com/echasnovski/mini.nvim",
+        "https://github.com/nvim-mini/mini.nvim",
         mini_path,
     })
     vim.cmd("packadd mini.nvim | helptags ALL")
@@ -49,7 +49,7 @@ For a real-world example, check out
 ## 📋 Requirements
 
 - [Neovim](https://github.com/neovim/neovim) >= **0.11**
-- [mini.nvim](https://github.com/echasnovski/mini.nvim) (may not work properly
+- [mini.nvim](https://github.com/nvim-mini/mini.nvim) (may not work properly
   with partial modules)
 
 ## ⚙️ Configuration
