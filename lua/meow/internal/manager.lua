@@ -172,7 +172,7 @@ function Manager.import(root, opts)
       local cache_file = assert(io.open(cache_path, "w"))
 
       -- Load modules sequentially
-      assert(cache_file:write('local Manager = require("meow.internal.manager")'))
+      assert(cache_file:write("local Manager = require('meow.internal.manager')\n"))
       for _, m in ipairs(mods) do
         local mod, path = m[1], m[2]
         local mod_name = vim.inspect(mod)
@@ -180,16 +180,13 @@ function Manager.import(root, opts)
         assert(
           cache_file:write(
             ("package.preload[%s] = function()\n"):format(mod_name),
+            ("-- BEGIN<%s>\n"):format(path),
             mod_source,
+            ("-- END<%s>\n"):format(path),
             ("end\nManager.add_many(require(%s))\n"):format(mod_name)
           )
         )
       end
-
-      -- Re-compile to bytecodes
-      assert(cache_file:close())
-      local bytes = string.dump(assert(loadfile(cache_path)))
-      assert(assert(io.open(cache_path, "w")):write(bytes))
     end)
   end
 end
