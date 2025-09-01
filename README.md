@@ -76,6 +76,31 @@ plugins—you can supply a `config` function, set lazy-loading events, specify
 additional dependencies, and so on. This feature is designed to work with
 mini.nvim: install the entire plugin and then load different modules as needed.
 
+### Import caching
+
+meow.nvim supports caching spec imports. You can enable this with:
+
+```lua
+-- Enable caching for all imports
+require("meow").setup({
+    import_cache = "token for cache",
+})
+-- or for a particular import.
+spec = {
+    import = "module.to.import",
+    import_cache = "token for cache", -- enable
+    import_cache = "",                -- disable
+}
+```
+
+If an import is cached, all submodules in the root directory of that import are
+collected into a single module. Import caching reduces I/O loads when searching
+for and sourcing submodules. This is especially effective on mobile devices (for
+instance, in Termux), but may be unnecessary on desktops. The downside of this
+feature is that when a submodule is merged into the cached module, it loses
+useful debug information, which is particularly evident when runtime errors
+occur.
+
 ## 🎯 Goals
 
 meow.nvim offers a declarative way to manage plugins, including lazy-loading,
