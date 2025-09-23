@@ -30,14 +30,11 @@ function Manager.setup()
 
   local Handler = require("meow.internal.handler")
   ---@type MeoPlugin[], MeoPlugin[]
-  local init_plugins, opt_plugins = {}, {}
+  local start_plugins, opt_plugins = {}, {}
 
   -- 1) Resolve imports and dependencies.
   local visited = 1
   while visited <= #H.plugins do
-    -- Collect start plugins and then load them in appropriate order.
-    ---@type MeoPlugin[]
-    local start_plugins = {}
     repeat
       local plugin = H.plugins[visited]
       visited = visited + 1
@@ -54,12 +51,10 @@ function Manager.setup()
       ::continue::
     until visited > #H.plugins
 
-    table.sort(start_plugins, H.plugin_ordering)
     for _, plugin in ipairs(start_plugins) do
-      if plugin.init then table.insert(init_plugins, plugin) end
       -- Load the plugin before resolving its imports as the imports may not
       -- exist until the plugin is installed.
-      Manager.load(plugin)
+      Manager.activate(plugin)
       if plugin.import then
         for _, mod in ipairs(plugin.import) do
           Manager.import(mod)
@@ -72,12 +67,14 @@ function Manager.setup()
   setmetatable(H.plugins, { __newindex = freeze })
   setmetatable(H.plugin_map, { __newindex = freeze })
 
-  -- 2) Run plugin initializors.
-  for _, plugin in ipairs(init_plugins) do
-    plugin:init()
+  -- 2) Set up start plugins.
+  table.sort(start_plugins, H.plugin_ordering) -- resolve loading order
+  for _, plugin in ipairs(start_plugins) do
+    if plugin.init then plugin:init() end
+    Manager.load(plugin)
   end
 
-  -- 3) Lazy-load opt plugins.
+  -- 3) Resolve lazy-load plugins.
   for _, plugin in ipairs(opt_plugins) do
     if plugin.import then
       Utils.notifyf("WARN", "imports of lazy plugin '%s' are not supported", plugin.name)
@@ -86,16 +83,13 @@ function Manager.setup()
     if plugin:is_shadow() or vim.uv.fs_stat(plugin:path()) then
       Handler.add(plugin)
     else
-      -- If a plugin is not installed, defer the setup of handlers.
-      MiniDeps.later(function()
-        Manager.activate(plugin)
-        Handler.add(plugin)
-      end)
+      -- If a plugin is not installed, install and load it directly.
+      MiniDeps.later(function() Manager.load(plugin) end)
     end
   end
 
   -- 4) Setup lazy handlers
-  Handler.setup(Manager.load)
+  Handler.setup(Manager.load) -- a start plugin must not depend on a lazy-load plugin
 
   -- 5) Sync cache tokens if updated
   if H.cache_expired then MiniDeps.later(H.sync_cache_tokens) end
