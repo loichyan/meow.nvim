@@ -217,7 +217,7 @@ function Manager.add(spec)
 
   local name, source = H.parse_plugin_name(spec[1])
   if H.plugin_map[name] then
-    Utils.notifyf("ERROR", "attempted to register a duplicate plugin", name)
+    Utils.notifyf("ERROR", "attempted to register a duplicate plugin '%s'", name)
     return
   end
 
