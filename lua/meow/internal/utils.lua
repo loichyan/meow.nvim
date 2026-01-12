@@ -5,6 +5,7 @@
 
 ---@class MeoAutocmdSpec: vim.api.keyset.create_autocmd
 ---@field event string|string[]
+---@field debonce? integer -- ms to debounce callbacks
 
 ---@class MeoUtils
 local Utils = {}
@@ -89,7 +90,7 @@ function Utils.scan_dirmods(dir, allow_empty, cb)
   end
 end
 
----Sets Neovim keymaps using delcarative key tables.
+---Sets Neovim keymaps using declarative key tables.
 ---@overload fun(specs:MeoKeySpec[])
 ---@overload fun(bufnr:integer,specs:MeoKeySpec[])
 function Utils.keymap(bufnr, specs)
@@ -110,7 +111,7 @@ function Utils.keymap(bufnr, specs)
   end
 end
 
----Creates Neovim autocmds using delcarative tables.
+---Creates Neovim autocmds using declarative tables.
 ---@overload fun(specs:MeoAutocmdSpec[])
 ---@overload fun(group:string,specs:MeoAutocmdSpec[])
 function Utils.autocmd(group, specs)
@@ -127,8 +128,23 @@ function Utils.autocmd(group, specs)
   for _, spec in ipairs(specs) do
     local opts = vim.tbl_extend("keep", spec, { group = group })
     local event = opts.event
-    opts.event = nil
+    if opts.debounce and opts.callback then
+      opts.callback = Utils.debounce(opts.debounce, opts.callback)
+    end
+    opts.event, opts.debounce = nil, nil
     au(event, opts)
+  end
+end
+
+---Debounces the given function.
+---@param ms integer
+---@param f fun(...)
+Utils.debounce = function(ms, f)
+  local timer = vim.uv.new_timer() ---@cast timer -nil
+  return function(...)
+    timer:stop()
+    local args = { ... }
+    timer:start(ms, 0, function() f(unpack(args)) end)
   end
 end
 
