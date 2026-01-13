@@ -79,6 +79,7 @@ function Manager.setup()
     if plugin.import then
       Utils.notifyf('WARN', 'imports of lazy plugin "%s" are not supported', plugin.name)
     end
+    if plugin.init then plugin:init() end
 
     if plugin:is_shadow() or vim.uv.fs_stat(plugin:path()) then
       Handler.add(plugin)
