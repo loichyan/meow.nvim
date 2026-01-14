@@ -10,31 +10,31 @@ Put the following snippet to `~/.config/nvim/init.lua`:
 
 ```lua
 -- mini.nvim, at least mini.deps, is required before going on
-local pack_path = vim.fn.stdpath("data") .. "/site/"
-local mini_path = pack_path .. "pack/deps/start/mini.nvim"
+local pack_path = vim.fn.stdpath('data') .. '/site/'
+local mini_path = pack_path .. 'pack/deps/start/mini.nvim'
 if not vim.uv.fs_stat(mini_path) then
-    vim.cmd('echo "Installing `mini.nvim`" | redraw')
+    vim.cmd('echo "Installing mini.nvim" | redraw')
     vim.fn.system({
-        "git",
-        "clone",
-        "--filter=blob:none",
-        "https://github.com/nvim-mini/mini.nvim",
+        'git',
+        'clone',
+        '--filter=blob:none',
+        'https://github.com/nvim-mini/mini.nvim',
         mini_path,
     })
-    vim.cmd("packadd mini.nvim | helptags ALL")
-    vim.cmd('echo "Installed `mini.nvim`" | redraw')
+    vim.cmd('packadd mini.nvim | helptags ALL')
+    vim.cmd('echo "Installed mini.nvim" | redraw')
 end
 
 -- Setup mini.deps
-local deps = require("mini.deps")
+local deps = require('mini.deps')
 deps.setup({ path = { package = pack_path } })
 -- Let mini.deps install meow.nvim for you
-deps.add("loichyan/meow.nvim")
+deps.add('loichyan/meow.nvim')
 -- Then setup meow.nvim
 deps.now(function()
-    require("meow").setup({
+    require('meow').setup({
         -- Import all plugin specs under `$RTP/lua/my/plugins/`
-        specs = { import = "my.plugins" },
+        specs = { import = 'my.plugins' },
         -- Tell mini.deps what plugins are managed by meow.nvim
         patch_mini = true,
     })
@@ -82,14 +82,14 @@ meow.nvim supports caching spec imports. You can enable this with:
 
 ```lua
 -- Enable caching for all imports
-require("meow").setup({
-    import_cache = "token for cache",
+require('meow').setup({
+    import_cache = 'token for cache',
 })
 -- or for a particular import.
 spec = {
-    import = "module.to.import",
-    import_cache = "token for cache", -- enable
-    import_cache = "",                -- disable
+    import = 'module.to.import',
+    import_cache = 'token for cache', -- enable
+    import_cache = '',                -- disable
 }
 
 -- Additionally, you can enable `vim.loader` for further performance:

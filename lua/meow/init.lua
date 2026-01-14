@@ -1,7 +1,7 @@
-local Utils = require("meow.internal.utils")
-local Manager = require("meow.internal.manager")
+local Utils = require('meow.internal.utils')
+local Manager = require('meow.internal.manager')
 
----@module "mini.deps"
+---@module 'mini.deps'
 
 ---@class Meow
 local Meow = {}
@@ -16,7 +16,7 @@ function Meow.setup(opts)
   _G.Meow = Meow
   Utils.setup()
 
-  Meow.config = require("meow.internal.config")
+  Meow.config = require('meow.internal.config')
   for k, v in pairs(opts) do
     Meow.config[k] = v
   end
@@ -27,7 +27,7 @@ function Meow.setup(opts)
 
   if opts.patch_mini then
     local orig = {}
-    for _, func in ipairs({ "get_session", "update", "clean" }) do
+    for _, func in ipairs({ 'get_session', 'update', 'clean' }) do
       orig[func] = MiniDeps[func]
       MiniDeps[func] = function(...)
         Manager.activate_all()

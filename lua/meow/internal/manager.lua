@@ -1,9 +1,9 @@
 ---@diagnostic disable: invisible
 
-local Config = require("meow.internal.config")
-local Constants = require("meow.internal.constants")
-local Plugin = require("meow.internal.plugin")
-local Utils = require("meow.internal.utils")
+local Config = require('meow.internal.config')
+local Constants = require('meow.internal.constants')
+local Plugin = require('meow.internal.plugin')
+local Utils = require('meow.internal.utils')
 local PluginState = Constants.PluginState
 
 ---@class MeoPluginManager
@@ -28,7 +28,7 @@ function Manager.setup()
   if H.did_setup then return end
   H.did_setup = true
 
-  local Handler = require("meow.internal.handler")
+  local Handler = require('meow.internal.handler')
   ---@type MeoPlugin[], MeoPlugin[]
   local start_plugins, opt_plugins = {}, {}
 
@@ -63,7 +63,7 @@ function Manager.setup()
     end
   end
   -- Reject new plugins
-  local freeze = function() error("new plugins are not allowed after setup") end
+  local freeze = function() error('new plugins are not allowed after setup') end
   setmetatable(H.plugins, { __newindex = freeze })
   setmetatable(H.plugin_map, { __newindex = freeze })
 
@@ -77,7 +77,7 @@ function Manager.setup()
   -- 3) Resolve lazy-load plugins.
   for _, plugin in ipairs(opt_plugins) do
     if plugin.import then
-      Utils.notifyf("WARN", "imports of lazy plugin '%s' are not supported", plugin.name)
+      Utils.notifyf('WARN', 'imports of lazy plugin "%s" are not supported', plugin.name)
     end
 
     if plugin:is_shadow() or vim.uv.fs_stat(plugin:path()) then
@@ -111,14 +111,14 @@ function Manager.plugins() return vim.deepcopy(H.plugins) end
 ---@param opts? {cache_token?:string}
 function Manager.import(root, opts)
   local cache_token = (opts or {}).cache_token or Config.import_cache
-  if type(cache_token) == "function" then cache_token = cache_token() end
-  cache_token = cache_token or ""
+  if type(cache_token) == 'function' then cache_token = cache_token() end
+  cache_token = cache_token or ''
 
   -- Try load form cache
   local cache_name, cache_path
-  if cache_token ~= "" then
-    cache_name = root:gsub("%.", "_")
-    cache_path = H.cache_dir .. "/" .. cache_name .. ".lua"
+  if cache_token ~= '' then
+    cache_name = root:gsub('%.', '_')
+    cache_path = H.cache_dir .. '/' .. cache_name .. '.lua'
     if H.check_cache_token(cache_name, cache_token) then
       -- Cache hit, all modules should be imported
       dofile(cache_path)
@@ -131,7 +131,7 @@ function Manager.import(root, opts)
   local mods = {}
   Utils.scan_submods(root, function(mod, path) table.insert(mods, { mod, path }) end)
   if #mods == 0 then
-    Utils.notifyf("WARN", "import root '%s' is empty", root)
+    Utils.notifyf('WARN', 'import root "%s" is empty', root)
     return
   end
 
@@ -146,38 +146,38 @@ function Manager.import(root, opts)
       package.preload[mod] = chunk
 
       local specs = require(mod)
-      if type(specs) ~= "table" then
-        error("invalid spec: " .. vim.inspect(specs))
+      if type(specs) ~= 'table' then
+        error('invalid spec: ' .. vim.inspect(specs))
       else
         Manager.add_many(specs)
       end
     end)
     -- Skip caching as error occurs.
     if not ok then
-      cache_token = ""
-      Utils.notifyf("ERROR", "failed to import module %s: %s", mod, err)
+      cache_token = ''
+      Utils.notifyf('ERROR', 'failed to import module %s: %s', mod, err)
     end
   end
 
-  if cache_token ~= "" then
+  if cache_token ~= '' then
     -- Defer cache rebuilding to speed up startup
     MiniDeps.later(function()
-      vim.fn.mkdir(H.cache_dir, "p")
-      local cache_file = assert(io.open(cache_path, "w"))
+      vim.fn.mkdir(H.cache_dir, 'p')
+      local cache_file = assert(io.open(cache_path, 'w'))
 
       -- Load modules sequentially
       assert(cache_file:write("local Manager = require('meow.internal.manager')\n"))
       for _, m in ipairs(mods) do
         local mod, path = m[1], m[2]
         local mod_name = vim.inspect(mod)
-        local mod_source = assert(io.open(path, "r")):read("*a")
+        local mod_source = assert(io.open(path, 'r')):read('*a')
         assert(
           cache_file:write(
-            ("package.preload[%s] = function()\n"):format(mod_name),
-            ("-- BEGIN<%s>\n"):format(path),
+            ('package.preload[%s] = function()\n'):format(mod_name),
+            ('-- BEGIN<%s>\n'):format(path),
             mod_source,
-            ("-- END<%s>\n"):format(path),
-            ("end\nManager.add_many(require(%s))\n"):format(mod_name)
+            ('-- END<%s>\n'):format(path),
+            ('end\nManager.add_many(require(%s))\n'):format(mod_name)
           )
         )
       end
@@ -188,7 +188,7 @@ end
 ---Adds one or more plugins from the given spec(s).
 ---@param specs MeoSpecImport
 function Manager.add_many(specs)
-  if type(specs[1]) ~= "table" then specs = { specs } end
+  if type(specs[1]) ~= 'table' then specs = { specs } end
   ---@cast specs MeoSpec[]
   for _, spec in ipairs(specs) do
     Manager.add(spec)
@@ -204,7 +204,7 @@ function Manager.add(spec)
     -- If the spec contains only an import field, resolve the import
     -- immediately; otherwise, defer that until it is installed.
     local imports = spec.import
-    if type(imports) ~= "table" then imports = { imports } end
+    if type(imports) ~= 'table' then imports = { imports } end
     ---@cast imports string[]
     if #imports > 0 then
       local import_opts = { cache_token = spec.import_cache }
@@ -217,7 +217,7 @@ function Manager.add(spec)
 
   local name, source = H.parse_plugin_name(spec[1])
   if H.plugin_map[name] then
-    Utils.notifyf("ERROR", "attempted to register a duplicate plugin '%s'", name)
+    Utils.notifyf('ERROR', 'attempted to register a duplicate plugin "%s"', name)
     return
   end
 
@@ -230,8 +230,8 @@ function Manager.add(spec)
   for key, val in pairs(spec) do
     local vtype = Constants.SPEC_VTYPES[key]
     if not vtype then
-    elseif vtype == "list" then
-      plugin[key] = type(val) ~= "table" and { val } or val
+    elseif vtype == 'list' then
+      plugin[key] = type(val) ~= 'table' and { val } or val
     else
       plugin[key] = val
     end
@@ -253,10 +253,10 @@ end
 ---@param plugin string|MeoPlugin
 function Manager.load(plugin)
   -- Resolve the plugin by name.
-  if type(plugin) == "string" then
+  if type(plugin) == 'string' then
     local p = Manager.get(plugin)
     if not p then
-      Utils.notifyf("ERROR", "attempted to load an undefined plugin '%s'", plugin)
+      Utils.notifyf('ERROR', 'attempted to load an undefined plugin "%s"', plugin)
       return
     end
     plugin = p
@@ -265,7 +265,7 @@ function Manager.load(plugin)
   -- Ensure the plugin should be loaded.
   if plugin:_get_state() >= PluginState.LOADING then
     if not plugin:will_load() then
-      Utils.notifyf("ERROR", "attempted to load a disabled plugin '%s'", plugin.name)
+      Utils.notifyf('ERROR', 'attempted to load a disabled plugin "%s"', plugin.name)
     end
     return
   end
@@ -275,7 +275,7 @@ function Manager.load(plugin)
     dep._state = PluginState.LOADING
     if dep.config then
       local ok, err = pcall(dep.config, dep)
-      if not ok then Utils.notifyf("ERROR", "failed to setup '%s': %s", dep.name, err) end
+      if not ok then Utils.notifyf('ERROR', 'failed to setup "%s": %s', dep.name, err) end
     end
     dep._state = PluginState.LOADED
   end
@@ -298,7 +298,7 @@ function Manager.activate(plugin)
 
   -- Defer activations for plugins that must have been loaded already, as they
   -- can slightly slow down the startup.
-  if vim.v.vim_did_enter == 0 and (plugin.name == "meow.nvim" or plugin.name == "mini.nvim") then
+  if vim.v.vim_did_enter == 0 and (plugin.name == 'meow.nvim' or plugin.name == 'mini.nvim') then
     MiniDeps.later(function() MiniDeps.add(minispec) end)
   else
     MiniDeps.add(minispec)
@@ -322,9 +322,9 @@ end
 function Manager.load_snap_from(path)
   local ok, snap = pcall(dofile, path)
   if not ok then
-    Utils.notifyf("ERROR", "failed to load snapshot from '%s': %s", path, snap)
-  elseif type(snap) ~= "table" then
-    Utils.notifyf("ERROR", "snapshot returned from '%s' is invalid: %s", path, vim.inspect(snap))
+    Utils.notifyf('ERROR', 'failed to load snapshot from "%s": %s', path, snap)
+  elseif type(snap) ~= 'table' then
+    Utils.notifyf('ERROR', 'snapshot returned from "%s" is invalid: %s', path, vim.inspect(snap))
   else
     -- Defer loading snapshots until all imports are resolved.
     for k, v in pairs(snap) do
@@ -340,14 +340,14 @@ function H.import_dependencies(plugin)
     plugin._deps = plugin._deps or {}
     for _, dep_spec in ipairs(plugin.dependencies) do
       local dep_name
-      if type(dep_spec) == "string" then
+      if type(dep_spec) == 'string' then
         dep_name = dep_spec
       else
         local dep = Manager.add(dep_spec)
         if not dep then
           Utils.notifyf(
-            "ERROR",
-            "dependency spec for %s is not a valid plugin: %s",
+            'ERROR',
+            'dependency spec for %s is not a valid plugin: %s',
             plugin.name,
             vim.inspect(dep_spec)
           )
@@ -390,13 +390,13 @@ function H.collect_dependencies(result, plugin)
     for dep_name, _ in pairs(plugin._deps) do
       local dep = H.plugin_map[dep_name]
       if not dep then
-        if dep_name:find("/") then
-          Utils.notifyf("ERROR", "dependency '%s' must be defined as a spec", dep_name)
+        if dep_name:find('/') then
+          Utils.notifyf('ERROR', 'dependency "%s" must be defined as a spec', dep_name)
         else
-          Utils.notifyf("ERROR", "found undefined dependency: %s", dep_name)
+          Utils.notifyf('ERROR', 'dependency "%s" is undefined', dep_name)
         end
       elseif dep._level == -1 then
-        Utils.notifyf("ERROR", "found circular dependency: %s and %s", plugin.name, dep_name)
+        Utils.notifyf('ERROR', 'found circular dependency: "%s" and "%s"', plugin.name, dep_name)
       else
         H.collect_dependencies(result, dep)
         dep_level = math.max(dep_level, dep._level)
@@ -427,7 +427,7 @@ end
 ---@param str string
 ---@return string,string?
 function H.parse_plugin_name(str)
-  local basename = string.match(str, ".*/(.*)")
+  local basename = string.match(str, '.*/(.*)')
   if not basename then
     return str, nil
   else
@@ -435,37 +435,37 @@ function H.parse_plugin_name(str)
   end
 end
 
-H.cache_dir = vim.fn.stdpath("cache") .. "/meow"
+H.cache_dir = vim.fn.stdpath('cache') .. '/meow'
 
 ---@param name string
 ---@param token string
 ---@return boolean
 function H.check_cache_token(name, token)
   -- Lazy-load cache manifest
-  ---@type table<string,string>|{["$version"]:number}
+  ---@type table<string,string>|{['$version']:number}
   local tokens = H.cache_tokens
   if not tokens then
-    local ok, cache_token_path = nil, H.cache_dir .. "/cache"
+    local ok, cache_token_path = nil, H.cache_dir .. '/cache'
     ok, tokens = pcall(dofile, cache_token_path)
     tokens = ok and tokens or {}
     H.cache_tokens = tokens
   end
   -- Ensure both the version and the token match
-  if tokens[name] == token and tokens["$version"] == Constants.cache_version then
+  if tokens[name] == token and tokens['$version'] == Constants.cache_version then
     return true
   else
     tokens[name] = token
-    tokens["$version"] = Constants.cache_version
+    tokens['$version'] = Constants.cache_version
     H.cache_expired = true
     return false
   end
 end
 
 function H.sync_cache_tokens()
-  vim.fn.mkdir(H.cache_dir, "p")
-  local cache_token_path = H.cache_dir .. "/cache"
+  vim.fn.mkdir(H.cache_dir, 'p')
+  local cache_token_path = H.cache_dir .. '/cache'
   local cache_tbl = vim.inspect(H.cache_tokens)
-  assert(assert(io.open(cache_token_path, "w")):write("return ", cache_tbl))
+  assert(assert(io.open(cache_token_path, 'w')):write('return ', cache_tbl))
 end
 
 return Manager

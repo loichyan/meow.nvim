@@ -1,6 +1,6 @@
-local Config = require("meow.internal.config")
-local Constants = require("meow.internal.constants")
-local Utils = require("meow.internal.utils")
+local Config = require('meow.internal.config')
+local Constants = require('meow.internal.constants')
+local Utils = require('meow.internal.utils')
 
 ---@class MeoEventHandler
 local Handler = {}
@@ -24,7 +24,7 @@ function Handler.add(plugin)
       plugin.module = {}
       if not plugin:is_shadow() then
         Utils.scan_dirmods(
-          plugin:path() .. "/lua",
+          plugin:path() .. '/lua',
           true,
           function(mod) table.insert(plugin.module, mod) end
         )
@@ -64,7 +64,7 @@ function Handler.setup(loader)
     -- Fast path if all modules are loaded.
     if remaining_modules == 0 then return end
 
-    local plugins = H.by_module[mod] or H.by_module[string.match(mod, "([^.]+)%.?")]
+    local plugins = H.by_module[mod] or H.by_module[string.match(mod, '([^.]+)%.?')]
     if not plugins or plugins._loaded then return end
 
     for _, plugin in ipairs(plugins) do
@@ -80,17 +80,17 @@ function Handler.setup(loader)
     end
   end)
 
-  local group = vim.api.nvim_create_augroup("MeoEventHandler", { clear = false })
+  local group = vim.api.nvim_create_augroup('MeoEventHandler', { clear = false })
   local au = vim.api.nvim_create_autocmd
 
   -- Set up event handlers.
-  local by_very_lazy = H.by_event["VeryLazy"] -- Load them later
-  H.by_event["VeryLazy"] = nil
+  local by_very_lazy = H.by_event['VeryLazy'] -- Load them later
+  H.by_event['VeryLazy'] = nil
 
   local event_aliases = Config.event_aliases or {}
   for key, plugins in pairs(H.by_event) do
     for _, ev in ipairs(event_aliases[key] or { key }) do
-      local name, pattern = string.match(ev, "(%w+) (%w+)")
+      local name, pattern = string.match(ev, '(%w+) (%w+)')
       name = name or ev
       au(name, {
         group = group,
@@ -109,7 +109,7 @@ function Handler.setup(loader)
 
   -- Set up filetype handlers.
   for ft, plugins in pairs(H.by_ft) do
-    au("FileType", {
+    au('FileType', {
       group = group,
       once = true,
       pattern = ft,
@@ -125,7 +125,7 @@ function Handler.setup(loader)
 
   -- Trigger the VeryLazy event.
   -- See <https://github.com/folke/lazy.nvim/blob/6c3bda4aca61a13a9c63f1c1d1b16b9d3be90d7a/lua/lazy/core/util.lua#L169>
-  au("UIEnter", {
+  au('UIEnter', {
     group = group,
     once = true,
     callback = function()
@@ -135,7 +135,7 @@ function Handler.setup(loader)
             loader(plugin)
           end
         end
-        vim.api.nvim_exec_autocmds("User", { pattern = "VeryLazy", modeline = false })
+        vim.api.nvim_exec_autocmds('User', { pattern = 'VeryLazy', modeline = false })
       end)
     end,
   })

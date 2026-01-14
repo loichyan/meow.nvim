@@ -19,46 +19,47 @@ Constants.PluginState = {
   DISABLED = 5,
 }
 
----@type table<string,"primitive"|"list"|"table">
+-- stylua: ignore
+---@type table<string,'primitive'|'list'|'table'>
 Constants.SPEC_VTYPES = {
-  source = "primitive",
-  checkout = "primitive",
-  monitor = "primitive",
-  hooks = "table",
+  source       = 'primitive',
+  checkout     = 'primitive',
+  monitor      = 'primitive',
+  hooks        = 'table',
 
-  shadow = "primitive",
-  enabled = "primitive",
-  cond = "primitive",
-  priority = "primitive",
+  shadow       = 'primitive',
+  enabled      = 'primitive',
+  cond         = 'primitive',
+  priority     = 'primitive',
 
-  lazy = "primitive",
-  event = "list",
-  ft = "list",
-  module = "list",
+  lazy         = 'primitive',
+  event        = 'list',
+  ft           = 'list',
+  module       = 'list',
 
-  init = "primitive",
-  config = "primitive",
+  init         = 'primitive',
+  config       = 'primitive',
 
-  dependencies = "list",
-  import = "list",
+  dependencies = 'list',
+  import       = 'list',
 }
 
 ---@type string[]
 Constants.MINI_SPEC_KEYS = {
-  "name",
-  "source",
-  "checkout",
-  "monitor",
-  "hooks",
+  'name',
+  'source',
+  'checkout',
+  'monitor',
+  'hooks',
 }
 
 Constants.cache_version = 1
 
-Constants.is_mini = function(string) return vim.startswith(string, "mini.") end
+Constants.is_mini = function(string) return vim.startswith(string, 'mini.') end
 
 ---@type MeoSpecCond
 Constants.default_spec_shadow = function(plugin)
-  return Constants.is_mini(plugin.name) and plugin.name ~= "mini.nvim"
+  return Constants.is_mini(plugin.name) and plugin.name ~= 'mini.nvim'
 end
 
 ---@type MeoSpecCond

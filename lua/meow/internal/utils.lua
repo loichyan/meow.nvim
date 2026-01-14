@@ -13,8 +13,8 @@ local H = {}
 
 function Utils.setup()
   H.pending_notif = {}
-  vim.api.nvim_create_autocmd("UIEnter", {
-    desc = "Fire pending notifications",
+  vim.api.nvim_create_autocmd('UIEnter', {
+    desc = 'Fire pending notifications',
     once = true,
     callback = function()
       for _, notif in ipairs(H.pending_notif) do
@@ -26,7 +26,7 @@ function Utils.setup()
 end
 
 ---Display a notification.
----@param level "TRACE"|"DEBUG"|"INFO"|"WARN"|"ERROR"
+---@param level 'TRACE'|'DEBUG'|'INFO'|'WARN'|'ERROR'
 ---@param msg string
 function Utils.notify(level, msg)
   local ilevel = vim.log.levels[level]
@@ -38,7 +38,7 @@ function Utils.notify(level, msg)
 end
 
 ---Display a notification with `string.format`.
----@param level "TRACE"|"DEBUG"|"INFO"|"WARN"|"ERROR"
+---@param level 'TRACE'|'DEBUG'|'INFO'|'WARN'|'ERROR'
 ---@param msg string
 function Utils.notifyf(level, msg, ...) Utils.notify(level, string.format(msg, ...)) end
 
@@ -49,15 +49,15 @@ function Utils.notifyf(level, msg, ...) Utils.notify(level, string.format(msg, .
 ---@param root string
 ---@param cb fun(mod:string,path:string)
 function Utils.scan_submods(root, cb)
-  local rootdir = string.gsub(root, "%.", "/")
+  local rootdir = string.gsub(root, '%.', '/')
   for _, rtp in ipairs(vim.api.nvim_list_runtime_paths()) do
-    local dir = rtp .. "/lua/" .. rootdir
-    if vim.uv.fs_stat(dir .. ".lua") then cb(root, dir .. ".lua") end
+    local dir = rtp .. '/lua/' .. rootdir
+    if vim.uv.fs_stat(dir .. '.lua') then cb(root, dir .. '.lua') end
     Utils.scan_dirmods(dir, false, function(mod, path)
-      if mod == "init" then
+      if mod == 'init' then
         cb(root, path)
       else
-        cb(root .. "." .. mod, path)
+        cb(root .. '.' .. mod, path)
       end
     end)
   end
@@ -76,12 +76,12 @@ function Utils.scan_dirmods(dir, allow_empty, cb)
     local name, type = vim.uv.fs_scandir_next(f)
     if not name then break end
     ---@type string?
-    local path = dir .. "/" .. name
+    local path = dir .. '/' .. name
 
-    if name:find(".+%.lua$") then
+    if name:find('.+%.lua$') then
       name = name:sub(1, -5)
-    elseif type == "directory" and (allow_empty or vim.uv.fs_stat(path .. "/init.lua")) then
-      path = path .. "/init.lua"
+    elseif type == 'directory' and (allow_empty or vim.uv.fs_stat(path .. '/init.lua')) then
+      path = path .. '/init.lua'
     else
       path = nil
     end
@@ -103,10 +103,10 @@ function Utils.keymap(bufnr, specs)
 
   local map = vim.keymap.set
   for _, spec in ipairs(specs) do
-    local opts = vim.tbl_extend("keep", spec, { buffer = bufnr })
+    local opts = vim.tbl_extend('keep', spec, { buffer = bufnr })
     local lhs, rhs, mode = opts[1], opts[2], opts.mode
     opts[1], opts[2], opts.mode = nil, nil, nil
-    mode = mode or "n"
+    mode = mode or 'n'
     map(mode, lhs, rhs, opts)
   end
 end
@@ -126,7 +126,7 @@ function Utils.autocmd(group, specs)
 
   local au = vim.api.nvim_create_autocmd
   for _, spec in ipairs(specs) do
-    local opts = vim.tbl_extend("keep", spec, { group = group })
+    local opts = vim.tbl_extend('keep', spec, { group = group })
     local event = opts.event
     if opts.debounce and opts.callback then
       opts.callback = Utils.debounce(opts.debounce, opts.callback)

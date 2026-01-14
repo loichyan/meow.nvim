@@ -1,4 +1,4 @@
-local Constants = require("meow.internal.constants")
+local Constants = require('meow.internal.constants')
 local PluginState = Constants.PluginState
 
 ---@class MeoPlugin
@@ -54,7 +54,7 @@ end
 ---@return string
 function Plugin:path()
   if not self._path then
-    self._path = vim.fs.normalize(MiniDeps.config.path.package .. "/pack/deps/opt/" .. self.name)
+    self._path = vim.fs.normalize(MiniDeps.config.path.package .. '/pack/deps/opt/' .. self.name)
   end
   return self._path
 end
@@ -68,29 +68,29 @@ function Plugin:will_load() return self:_get_state() < PluginState.IGNORED end
 
 ---Returns `shadow == true`.
 ---@return boolean
-function Plugin:is_shadow() return self:_get_cond("shadow", Constants.default_spec_shadow) end
+function Plugin:is_shadow() return self:_get_cond('shadow', Constants.default_spec_shadow) end
 
 ---Returns `enabled == true`.
 ---@return boolean
-function Plugin:is_enabled() return self:_get_cond("enabled", true) end
+function Plugin:is_enabled() return self:_get_cond('enabled', true) end
 
 ---Returns `cond == false`.
 ---@return boolean
-function Plugin:is_ignored() return not self:_get_cond("cond", true) end
+function Plugin:is_ignored() return not self:_get_cond('cond', true) end
 
 ---Returns `lazy == true`.
-function Plugin:is_lazy() return self:_get_cond("lazy", Constants.default_spec_lazy) end
+function Plugin:is_lazy() return self:_get_cond('lazy', Constants.default_spec_lazy) end
 
 ---Resolves the specified conditional field.
 ---@private
----@param key "shadow"|"enabled"|"cond"|"lazy"
+---@param key 'shadow'|'enabled'|'cond'|'lazy'
 ---@param default MeoSpecCond
 ---@return boolean
 function Plugin:_get_cond(key, default)
   local val = self[key]
-  if type(val) == "boolean" then return val end
+  if type(val) == 'boolean' then return val end
   if val == nil then val = default end
-  if type(val) == "function" then val = val(self) end
+  if type(val) == 'function' then val = val(self) end
   self[key] = not not val
   return self[key]
 end
