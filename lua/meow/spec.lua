@@ -40,7 +40,7 @@
 ---plugin will be ignored when loading plugins, but it will still be added to
 ---MiniDeps, which prevents this plugin from being uninstalled.
 ---@field cond? MeoSpecCond
----A integer used to manuallly adjust the loading order.
+---A integer used to manually adjust the loading order.
 ---
 ---Plugins with a higher priority are loaded first. The recommended range is
 ---*[0, 100]*, and the default value is set to `50`.

@@ -37,9 +37,9 @@ function Meow.setup(opts)
   end
 end
 
------------------------------------
--- Methods for Plugin Management --
------------------------------------
+--------------------------------------------------------------------------------
+-- Methods for Plugin Management -----------------------------------------------
+--------------------------------------------------------------------------------
 
 ---Update plugins. See `:h MiniDeps.update`.
 ---
@@ -63,12 +63,13 @@ Meow.import = Manager.import
 Meow.add = Manager.add
 Meow.load = Manager.load
 
-----------------------
--- Useful Utilities --
-----------------------
+--------------------------------------------------------------------------------
+-- Useful Utilities ------------------------------------------------------------
+--------------------------------------------------------------------------------
 
 Meow.keymap = Utils.keymap
 Meow.autocmd = Utils.autocmd
+Meow.debounce = Utils.debounce
 Meow.notify = Utils.notify
 Meow.notifyf = Utils.notifyf
 
