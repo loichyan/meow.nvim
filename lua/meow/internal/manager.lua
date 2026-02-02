@@ -297,13 +297,7 @@ function Manager.activate(plugin)
   -- Ensure the snapped version if used.
   minispec.checkout = H.snapshot[plugin.name] or minispec.checkout
 
-  -- Defer activations for plugins that must have been loaded already, as they
-  -- can slightly slow down the startup.
-  if vim.v.vim_did_enter == 0 and (plugin.name == 'meow.nvim' or plugin.name == 'mini.nvim') then
-    MiniDeps.later(function() MiniDeps.add(minispec) end)
-  else
-    MiniDeps.add(minispec)
-  end
+  MiniDeps.add(minispec)
 
   if state < PluginState.ACTIVATED then plugin._state = PluginState.ACTIVATED end
 end
