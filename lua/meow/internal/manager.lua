@@ -67,7 +67,7 @@ function Manager.setup()
   setmetatable(H.plugins, { __newindex = freeze })
   setmetatable(H.plugin_map, { __newindex = freeze })
 
-  -- 2) Set up start plugins.
+  -- 2) Setup start plugins.
   table.sort(start_plugins, H.plugin_ordering) -- resolve loading order
   for _, plugin in ipairs(start_plugins) do
     if plugin.init then plugin:init() end
@@ -115,7 +115,7 @@ function Manager.import(root, opts)
   if type(cache_token) == 'function' then cache_token = cache_token() end
   cache_token = cache_token or ''
 
-  -- Try load form cache
+  -- Try loading form cache
   local cache_name, cache_path
   if cache_token ~= '' then
     cache_name = root:gsub('%.', '_')
@@ -294,7 +294,7 @@ function Manager.activate(plugin)
   for _, key in ipairs(Constants.MINI_SPEC_KEYS) do
     minispec[key] = plugin[key]
   end
-  -- Ensure the snapped version if used.
+  -- Ensure the pinned version is used.
   minispec.checkout = H.snapshot[plugin.name] or minispec.checkout
 
   MiniDeps.add(minispec)
@@ -302,7 +302,7 @@ function Manager.activate(plugin)
   if state < PluginState.ACTIVATED then plugin._state = PluginState.ACTIVATED end
 end
 
----Adds all plugins to MiniDeps, mainly used to to make MiniDeps recognize all
+---Adds all plugins to MiniDeps, mainly used to make MiniDeps recognize all
 ---registered lazy-loading plugins before updating or cleaning.
 function Manager.activate_all()
   if H.activated_all then return end
@@ -358,7 +358,7 @@ end
 
 ---Resolves dependencies that are required by the given plugin.
 ---
----The returned list exlucdes any already loaded plugins and is sorted by
+---The returned list excludes any already loaded plugins and is sorted by
 ---appropriate order. It contains the given plugin itself as well.
 ---@param plugin MeoPlugin
 ---@return MeoPlugin[]
