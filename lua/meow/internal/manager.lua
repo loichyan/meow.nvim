@@ -175,9 +175,9 @@ function Manager.import(root, opts)
         assert(
           cache_file:write(
             ('package.preload[%s] = function()\n'):format(mod_name),
-            ('-- BEGIN<%s>\n'):format(path),
+            ('-- BEGIN:%s\n'):format(path),
             mod_source,
-            ('-- END<%s>\n'):format(path),
+            ('-- END:%s\n'):format(path),
             ('end\nManager.add_many(require(%s))\n'):format(mod_name)
           )
         )
