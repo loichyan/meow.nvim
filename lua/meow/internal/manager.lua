@@ -38,17 +38,15 @@ function Manager.setup()
     repeat
       local plugin = H.plugins[visited]
       visited = visited + 1
-      if not plugin:will_load() then goto continue end
-
-      -- Import all dependency specs.
-      H.import_dependencies(plugin)
-      if plugin:is_lazy() then
-        table.insert(opt_plugins, plugin)
-      else
-        table.insert(start_plugins, plugin)
+      if plugin:will_load() then
+        -- Import all dependency specs.
+        H.import_dependencies(plugin)
+        if plugin:is_lazy() then
+          table.insert(opt_plugins, plugin)
+        else
+          table.insert(start_plugins, plugin)
+        end
       end
-
-      ::continue::
     until visited > #H.plugins
 
     for _, plugin in ipairs(start_plugins) do
