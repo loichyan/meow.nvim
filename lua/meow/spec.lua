@@ -11,34 +11,39 @@
 ---@alias MeoSpecImport MeoSpec[]|MeoSpec
 
 ---@class MeoSpec
----The identifier of this plugin.
+---The source URI to the plugin source.
 ---
----The URI to the plugin source can be specified, of which the basename is set
----to the plugin's name.
----@field [1]? string
----The URI to the plugin source.
----@field source? string
----The checkout target after the source is cloned.
----@field checkout? string
----The branch used to track new changes.
----@field monitor? string
----Hooks invoked on certain events.
----@field hooks? MeoSpecHooks
----An alias of `hooks.post_checkout`.
+---It can be any valid format supported by Git. You can also use the format
+---`<user>/<repo>` to indicate a Git repository hosted on GitHub,
+---@field [1] string
+---The identifier of this plugin. By default, the basename of this plugin's
+---source URI is taken.
+---@field name? string
+---Version to use for installation and updates.
+---@field version? string|vim.VersionRange
+---Hook function invoked when this plugin gets updated.
 ---@field build? MeoSpecHook
+---(deprecated) Use `MeoSpec.src` instead.
+---@field source? nil
+---(deprecated) Use `MeoSpec.version` instead.
+---@field checkout? nil
+---(deprecated) This field is incompatible with vim.pack.
+---@field monitor? nil
+---(deprecated) This field is incompatible with vim.pack.
+---@field hooks? nil
 ---Whether to make this plugin "shadow" other plugins.
 ---
----A shadow plugin is not added to MiniDeps and exists only to perform the setup
+---A shadow plugin is not added to vim.pack and exists only to perform the setup
 ---function on the configured events. This is especially useful for setting up
 ---different mini modules independently. By default, any mini plugin (determined
 ---by a name starting with "mini.") automatically becomes a shadow plugin.
 ---@field shadow? MeoSpecCond
 ---Whether to enable this plugin. The default is `true`. Disabled plugins will
----not be added to MiniDeps and will therefore be cleaned up.
+---not be added to vim.pack and will therefore be cleaned up.
 ---@field enabled? MeoSpecCond
 ---Whether to load this plugin. The default is `true`. If set to `false`, this
 ---plugin will be ignored when loading plugins, but it will still be added to
----MiniDeps, which prevents this plugin from being uninstalled.
+---vim.pack, which prevents this plugin from being uninstalled.
 ---@field cond? MeoSpecCond
 ---An integer used to manually adjust the loading order.
 ---
@@ -50,7 +55,7 @@
 ---
 ---A plugin can be explicitly set to be lazy without any event handlers, as
 ---every plugin will be loaded when it is `require`d. However, the plugin will
----not be added to MiniDeps until it is loaded, so updating or cleaning may not
+---not be added to vim.pack until it is loaded, so updating or cleaning may not
 ---work properly.
 ---@field lazy? MeoSpecCond
 ---Events to trigger lazy-loading.
@@ -87,16 +92,4 @@
 
 ---@alias MeoSpecStrList string|string[]
 ---@alias MeoSpecCond boolean|fun(self:MeoPlugin):boolean
-
----@class MeoSpecHooks
----@field pre_install?   MeoSpecHook - Before creating the plugin directory.
----@field post_install?  MeoSpecHook - After creating the plugin directory.
----@field pre_checkout?  MeoSpecHook - Before making change in the source.
----@field post_checkout? MeoSpecHook - After making change in the source.
-
----@alias MeoSpecHook fun(args:MeoSpecHookArgs)
-
----@class MeoSpecHookArgs
----@field path   string - The absolute path to the plugin's directory.
----@field source string - The resolved `source` from the spec.
----@field name   string - The resolved `name` from the spec.
+---@alias MeoSpecHook fun(plugin:MeoPlugin)

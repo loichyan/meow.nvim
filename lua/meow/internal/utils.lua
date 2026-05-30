@@ -11,29 +11,38 @@
 local Utils = {}
 local H = {}
 
-function Utils.setup()
-  H.pending_notif = {}
-  vim.api.nvim_create_autocmd('UIEnter', {
-    desc = 'Fire pending notifications',
-    once = true,
-    callback = function()
-      for _, notif in ipairs(H.pending_notif) do
-        vim.notify(unpack(notif))
-      end
-      H.pending_notif = nil
-    end,
-  })
+---@param cb fun()
+function Utils.later(cb)
+  if H.scheduled_later == nil then
+    H.scheduled_later = {}
+    vim.schedule(H.execute_later)
+  end
+  local trace = debug.traceback('', 2)
+  table.insert(H.scheduled_later, { cb, trace })
 end
 
 ---Display a notification.
 ---@param level 'TRACE'|'DEBUG'|'INFO'|'WARN'|'ERROR'
 ---@param msg string
 function Utils.notify(level, msg)
-  local ilevel = vim.log.levels[level]
+  if H.pending_notif == nil and vim.v.vim_did_enter == 0 then
+    H.pending_notif = {}
+    vim.api.nvim_create_autocmd('UIEnter', {
+      desc = 'Fire pending notifications',
+      once = true,
+      callback = function()
+        for _, notif in ipairs(H.pending_notif) do
+          vim.notify(unpack(notif))
+        end
+        H.pending_notif = false
+      end,
+    })
+  end
+
   if H.pending_notif then
-    table.insert(H.pending_notif, { msg, ilevel })
+    table.insert(H.pending_notif, { msg, vim.log.levels[level] })
   else
-    vim.notify(msg, ilevel)
+    vim.notify(msg, vim.log.levels[level])
   end
 end
 
@@ -146,6 +155,30 @@ Utils.debounce = function(ms, f)
     local args = { ... }
     timer:start(ms, 0, function() f(unpack(args)) end)
   end
+end
+
+---Adapted from <https://github.com/nvim-mini/mini.nvim/blob/9d0b9b7188d5c24b5a87f0d8b383ec8bda7a0de4/lua/mini/misc.lua#L378>.
+H.execute_later = function()
+  local timer = assert(vim.loop.new_timer())
+  local f
+  f = vim.schedule_wrap(function()
+    local later = H.scheduled_later[1]
+    if later == nil then
+      if not timer:is_closing() then timer:close() end
+      H.scheduled_later = nil
+      return
+    end
+    table.remove(H.scheduled_later, 1)
+
+    local cb, trace = later[1], later[2]
+    local ok, err = pcall(cb)
+    if not ok then
+      Utils.notifyf('ERROR', 'failed to execute later function: %s\n%s', err, trace)
+    end
+    timer:start(1, 0, f)
+  end)
+  -- Space out "later" executions to be sure that they don't block anything
+  timer:start(1, 0, f)
 end
 
 return Utils

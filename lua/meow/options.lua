@@ -1,13 +1,13 @@
 ---@meta _
 
+-- TODO: control max number of concurrent jobs
 ---@class MeoOptions
 ---Root spec(s) to load. Imports of other modules are usually specified here.
 ---@field specs? MeoSpecImport
----Perform a few patches on MiniDeps so that all enabled plugins can be
----recognized correctly during updating or cleaning.
----@field patch_mini? boolean
----Whether to enable automatic snapshot generation. The default set to false.
----@field enable_snapshot? boolean
+---(deprecated) MiniDeps is no longer supported.
+---@field patch_mini? nil
+---(deprecated) Snapshot is always enabled for vim.pack.
+---@field enable_snapshot? nil
 ---The default token for import caches.
 ---@field import_cache? string|(fun():string)
 ---Aliases for event handlers.

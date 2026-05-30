@@ -3,10 +3,12 @@ local PluginState = Constants.PluginState
 
 ---@class MeoPlugin
 ---@field name string
----@field source? string
----@field checkout? string
----@field monitor? string
----@field hooks? MeoSpecHooks
+---@field source string
+---@field version? string|vim.VersionRange
+---@field build? MeoSpecHook
+---@field checkout? nil -- deprecated
+---@field monitor? nil -- deprecated
+---@field hooks? nil -- deprecated
 ---@field shadow? MeoSpecCond
 ---@field enabled? MeoSpecCond
 ---@field cond? MeoSpecCond
@@ -54,14 +56,14 @@ end
 ---@return string
 function Plugin:path()
   if not self._path then
-    self._path = vim.fs.normalize(MiniDeps.config.path.package .. '/pack/deps/opt/' .. self.name)
+    self._path = vim.fs.normalize(vim.fn.stdpath('data') .. '/pack/core/opt/' .. self.name)
   end
   return self._path
 end
 
 ---Returns whether this plugin is loaded.
 ---@return boolean
-function Plugin:is_loaded() return self._state == PluginState.LOADED end
+function Plugin:is_loaded() return self:_get_state() == PluginState.LOADED end
 
 ---Returns whether this plugin will be loaded.
 function Plugin:will_load() return self:_get_state() < PluginState.IGNORED end

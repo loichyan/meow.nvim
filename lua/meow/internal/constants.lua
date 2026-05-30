@@ -5,7 +5,7 @@ local Constants = {}
 ---Denotes whether a plugin is activated or loaded.
 ---
 ---Possible values are:
----  * ACTIVATED : Added to MiniDeps, but not loaded.
+---  * ACTIVATED : Added to vim.pack, but not loaded.
 ---  * LOADING   : In the loading progress.
 ---  * LOADED    : Loaded and initialized.
 ---  * DISABLED  : Disabled and never to be loaded.
@@ -19,13 +19,20 @@ Constants.PluginState = {
   DISABLED = 5,
 }
 
+Constants.PluginStateNames = {}
+for key, value in pairs(Constants.PluginState) do
+  Constants.PluginStateNames[value] = key
+end
+
 -- stylua: ignore
----@type table<string,'primitive'|'list'|'table'>
+---@type table<string,'deprecated'|'primitive'|'list'|'table'>
 Constants.SPEC_VTYPES = {
-  source       = 'primitive',
-  checkout     = 'primitive',
-  monitor      = 'primitive',
-  hooks        = 'table',
+  src          = 'primitive',
+  version      = 'primitive',
+  source       = 'deprecated',
+  checkout     = 'deprecated',
+  monitor      = 'deprecated',
+  hooks        = 'deprecated',
 
   shadow       = 'primitive',
   enabled      = 'primitive',
@@ -42,15 +49,6 @@ Constants.SPEC_VTYPES = {
 
   dependencies = 'list',
   import       = 'list',
-}
-
----@type string[]
-Constants.MINI_SPEC_KEYS = {
-  'name',
-  'source',
-  'checkout',
-  'monitor',
-  'hooks',
 }
 
 Constants.cache_version = 1

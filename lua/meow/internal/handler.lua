@@ -13,6 +13,9 @@ H.by_event = {}
 ---@type table<string,MeoPlugin[]|{_loaded:true}>
 H.by_ft = {}
 
+---@type table<string,MeoPlugin>
+H.hook_on_changed = {}
+
 ---@param plugin MeoPlugin
 function Handler.add(plugin)
   -- Lazy-loading on requiring.
@@ -54,10 +57,14 @@ function Handler.add(plugin)
       table.insert(H.by_ft[ft], plugin)
     end
   end
+
+  if plugin.build then H.hook_on_changed[plugin.name] = plugin end
 end
 
----@param loader fun(plugin:MeoPlugin)
+---@param loader fun(plugin:MeoPlugin[])
 function Handler.setup(loader)
+  H.loader = loader
+
   -- Set up module handlers.
   local remaining_modules = vim.tbl_count(H.by_module)
   table.insert(package.loaders, 1, function(mod)
@@ -66,10 +73,7 @@ function Handler.setup(loader)
 
     local plugins = H.by_module[mod] or H.by_module[string.match(mod, '([^.]+)%.?')]
     if not plugins or plugins._loaded then return end
-
-    for _, plugin in ipairs(plugins) do
-      loader(plugin)
-    end
+    H.loader(plugins)
     plugins._loaded = true
     remaining_modules = remaining_modules - 1
 
@@ -98,9 +102,7 @@ function Handler.setup(loader)
         pattern = pattern,
         callback = function()
           if plugins._loaded then return end
-          for _, plugin in ipairs(plugins) do
-            loader(plugin)
-          end
+          H.loader(plugins)
           plugins._loaded = true
         end,
       })
@@ -115,9 +117,7 @@ function Handler.setup(loader)
       pattern = ft,
       callback = function()
         if plugins._loaded then return end
-        for _, plugin in ipairs(plugins) do
-          loader(plugin)
-        end
+        H.loader(plugins)
         plugins._loaded = true
       end,
     })
@@ -130,13 +130,24 @@ function Handler.setup(loader)
     once = true,
     callback = function()
       vim.schedule(function()
-        if by_very_lazy then
-          for _, plugin in ipairs(by_very_lazy) do
-            loader(plugin)
-          end
-        end
+        if by_very_lazy then H.loader(by_very_lazy) end
         vim.api.nvim_exec_autocmds('User', { pattern = 'VeryLazy', modeline = false })
       end)
+    end,
+  })
+
+  -- Set up plugin hooks.
+  au('PackChanged', {
+    group = group,
+    callback = function(ev)
+      local name = ev.data.spec.name
+      local plugin = H.hook_on_changed[name]
+      if plugin == nil or plugin.build == nil then return end
+      if not ev.data.active then vim.cmd.packadd(name) end
+      local ok, err = pcall(plugin.build, plugin)
+      if not ok then
+        Utils.notifyf('ERROR', 'failed to run the build hook for plugin "%s": %s', name, err)
+      end
     end,
   })
 end

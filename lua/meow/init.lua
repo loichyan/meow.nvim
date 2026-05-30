@@ -13,8 +13,12 @@ function Meow.setup(opts)
   did_setup = true
   opts = opts or {}
 
+  if not vim.fn.has('nvim-0.12') then
+    Utils.notify('ERROR', 'meow.nvim requires Neovim >= 0.12')
+    return
+  end
+
   _G.Meow = Meow
-  Utils.setup()
 
   Meow.config = require('meow.internal.config')
   for k, v in pairs(opts) do
@@ -22,54 +26,29 @@ function Meow.setup(opts)
   end
 
   if opts.specs then Manager.add_many(opts.specs) end
-  if opts.enable_snapshot then Manager.load_snap_from(MiniDeps.config.path.snapshot) end
   Manager.setup()
 
-  if opts.patch_mini then
-    local orig = {}
-    for _, func in ipairs({ 'get_session', 'update', 'clean' }) do
-      orig[func] = MiniDeps[func]
-      MiniDeps[func] = function(...)
-        Manager.activate_all()
-        return orig[func](...)
-      end
-    end
+  for _, key in ipairs({ 'enable_snapshot', 'patch_mini' }) do
+    if opts[key] ~= nil then Utils.notifyf('ERROR', '`MeoOptions.%s` is deprecated', key) end
   end
 end
 
---------------------------------------------------------------------------------
 -- Methods for Plugin Management -----------------------------------------------
---------------------------------------------------------------------------------
-
----Update plugins. See `:h MiniDeps.update`.
----
----It's not necessary to use this unless `MeoOptions.patch_mini` is disabled.
-function Meow.update(...)
-  Manager.activate_all()
-  MiniDeps.update(...)
-end
-
----Clean plugins. See `:h MiniDeps.clean`.
----
----It's not necessary to use this unless `MeoOptions.patch_mini` is disabled.
-function Meow.clean(...)
-  Manager.activate_all()
-  MiniDeps.clean(...)
-end
-
-Meow.get = Manager.get
-Meow.plugins = Manager.plugins
-Meow.import = Manager.import
 Meow.add = Manager.add
+Meow.clean = Manager.clean
+Meow.debug = Manager.debug
+Meow.get = Manager.get
+Meow.import = Manager.import
 Meow.load = Manager.load
+Meow.plugins = Manager.plugins
+Meow.sync = Manager.sync
+Meow.update = Manager.update
 
---------------------------------------------------------------------------------
 -- Useful Utilities ------------------------------------------------------------
---------------------------------------------------------------------------------
-
-Meow.keymap = Utils.keymap
 Meow.autocmd = Utils.autocmd
 Meow.debounce = Utils.debounce
+Meow.keymap = Utils.keymap
+Meow.later = Utils.later
 Meow.notify = Utils.notify
 Meow.notifyf = Utils.notifyf
 
