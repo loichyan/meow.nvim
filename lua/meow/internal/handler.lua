@@ -1,10 +1,9 @@
 local Config = require('meow.internal.config')
 local Constants = require('meow.internal.constants')
-local Utils = require('meow.internal.utils')
 
 ---@class MeoEventHandler
 local Handler = {}
-local H = {}
+local H = setmetatable({}, { __index = require('meow.internal.utils') })
 
 ---@type table<string,MeoPlugin[]|{_loaded:true}>
 H.by_module = {}
@@ -26,7 +25,7 @@ function Handler.add(plugin)
     else
       plugin.module = {}
       if not plugin:is_shadow() then
-        Utils.scan_dirmods(
+        H.scan_dirmods(
           plugin:path() .. '/lua',
           true,
           function(mod) table.insert(plugin.module, mod) end
@@ -146,7 +145,7 @@ function Handler.setup(loader)
       if not ev.data.active then vim.cmd.packadd(name) end
       local ok, err = pcall(plugin.build, plugin)
       if not ok then
-        Utils.notifyf('ERROR', 'failed to run the build hook for plugin "%s": %s', name, err)
+        H.notifyf('ERROR', 'failed to run the build hook for plugin "%s": %s', name, err)
       end
     end,
   })

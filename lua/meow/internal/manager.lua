@@ -3,12 +3,11 @@
 local Config = require('meow.internal.config')
 local Constants = require('meow.internal.constants')
 local Plugin = require('meow.internal.plugin')
-local Utils = require('meow.internal.utils')
 local PluginState = Constants.PluginState
 
 ---@class MeoPluginManager
 local Manager = {}
-local H = {}
+local H = setmetatable({}, { __index = require('meow.internal.utils') })
 
 ---All registered plugins.
 ---@type MeoPlugin[]
@@ -72,7 +71,7 @@ function Manager.setup()
   local unloaded_opt_plugins = {}
   for _, plugin in ipairs(opt_plugins) do
     if plugin.import then
-      Utils.notifyf('WARN', 'imports of lazy plugin "%s" are not supported', plugin.name)
+      H.notifyf('WARN', 'imports of lazy plugin "%s" are not supported', plugin.name)
     end
     H.plugin_call(plugin, 'init')
 
@@ -89,10 +88,10 @@ function Manager.setup()
 
   -- 5) Load start plugins and install lazy plugins
   Manager.load_many(start_plugins)
-  Utils.later(function() Manager.load_many(unloaded_opt_plugins) end)
+  H.later(function() Manager.load_many(unloaded_opt_plugins) end)
 
   -- 5) Sync cache tokens if updated
-  if H.cache_expired then Utils.later(H.sync_cache_tokens) end
+  if H.cache_expired then H.later(H.sync_cache_tokens) end
 end
 
 ---Returns the plugin specified by name.
@@ -157,7 +156,7 @@ function Manager.load(plugin)
   if type(plugin) == 'string' then
     local p = Manager.get(plugin)
     if not p then
-      Utils.notifyf('ERROR', 'attempted to load an undefined plugin "%s"', plugin)
+      H.notifyf('ERROR', 'attempted to load an undefined plugin "%s"', plugin)
       return
     end
     plugin = p
@@ -190,9 +189,9 @@ function Manager.import(root, opts)
   -- Find all modules under the root module
   ---@type {[1]:string,[2]:string}[]
   local mods = {}
-  Utils.scan_submods(root, function(mod, path) table.insert(mods, { mod, path }) end)
+  H.scan_submods(root, function(mod, path) table.insert(mods, { mod, path }) end)
   if #mods == 0 then
-    Utils.notifyf('WARN', 'import root "%s" is empty', root)
+    H.notifyf('WARN', 'import root "%s" is empty', root)
     return
   end
 
@@ -216,13 +215,13 @@ function Manager.import(root, opts)
     -- Skip caching as error occurs.
     if not ok then
       cache_token = ''
-      Utils.notifyf('ERROR', 'failed to import module %s: %s', mod, err)
+      H.notifyf('ERROR', 'failed to import module %s: %s', mod, err)
     end
   end
 
   if cache_token ~= '' then
     -- Defer cache rebuilding to speed up startup
-    Utils.later(function()
+    H.later(function()
       vim.fn.mkdir(H.cache_dir, 'p')
       local cache_file = assert(io.open(cache_path, 'w'))
 
@@ -279,7 +278,7 @@ function Manager.add(spec)
   local name, source = string.match(spec[1], '.*/([%w-_.]+)$'), spec[1]
   name = name or spec[1]
   if H.plugin_map[name] then
-    Utils.notifyf('ERROR', 'attempted to register a duplicate plugin "%s"', name)
+    H.notifyf('ERROR', 'attempted to register a duplicate plugin "%s"', name)
     return
   end
   if string.find(source, '^[%w-]+/[%w-_.]+$') ~= nil then
@@ -298,7 +297,7 @@ function Manager.add(spec)
     if not vtype then
       -- Skip user-defined keys.
     elseif vtype == 'deprecated' then
-      Utils.notifyf('ERROR', 'spec key "%s" is deprecated for plugin "%s"', key, name)
+      H.notifyf('ERROR', 'spec key "%s" is deprecated for plugin "%s"', key, name)
     elseif vtype == 'list' then
       plugin[key] = type(val) ~= 'table' and { val } or val
     elseif vtype == 'primitive' then
@@ -325,7 +324,7 @@ function Manager.load_many(plugins)
         end
       end
     elseif not plugin:will_load() then
-      Utils.notifyf('ERROR', 'attempted to load a disabled plugin "%s"', plugin.name)
+      H.notifyf('ERROR', 'attempted to load a disabled plugin "%s"', plugin.name)
     end
   end
 
@@ -385,7 +384,7 @@ function H.import_dependencies(plugin)
       else
         local dep = Manager.add(dep_spec)
         if not dep then
-          Utils.notifyf(
+          H.notifyf(
             'ERROR',
             'dependency spec for %s is not a valid plugin: %s',
             plugin.name,
@@ -431,12 +430,12 @@ function H.collect_dependencies(result, plugin)
       local dep = H.plugin_map[dep_name]
       if not dep then
         if dep_name:find('/') then
-          Utils.notifyf('ERROR', 'dependency "%s" must be defined as a spec', dep_name)
+          H.notifyf('ERROR', 'dependency "%s" must be defined as a spec', dep_name)
         else
-          Utils.notifyf('ERROR', 'dependency "%s" is undefined', dep_name)
+          H.notifyf('ERROR', 'dependency "%s" is undefined', dep_name)
         end
       elseif dep._level == -1 then
-        Utils.notifyf('ERROR', 'found circular dependency: "%s" and "%s"', plugin.name, dep_name)
+        H.notifyf('ERROR', 'found circular dependency: "%s" and "%s"', plugin.name, dep_name)
       else
         H.collect_dependencies(result, dep)
         dep_level = math.max(dep_level, dep._level)
@@ -454,12 +453,12 @@ function H.plugin_call(plugin, fname)
   local f = plugin[fname]
   if f == nil then return end
   if not vim.is_callable(f) then
-    Utils.notifyf('ERROR', 'field %s must be a callable for plugin "%s"', fname, plugin.name)
+    H.notifyf('ERROR', 'field %s must be a callable for plugin "%s"', fname, plugin.name)
     return
   end
   local ok, err = pcall(f, plugin)
   if not ok then
-    Utils.notifyf('ERROR', 'failed to call field %s of plugin "%s": %s', fname, plugin.name, err)
+    H.notifyf('ERROR', 'failed to call field %s of plugin "%s": %s', fname, plugin.name, err)
   end
 end
 
