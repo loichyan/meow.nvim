@@ -16,7 +16,7 @@ H.by_ft = {}
 H.hook_on_changed = {}
 
 ---@param plugin MeoPlugin
-function Handler.add(plugin)
+Handler.add = function(plugin)
   -- Lazy-loading on requiring.
   if not plugin.module then
     -- Find modules to trigger the loading of the given plugin.
@@ -61,7 +61,7 @@ function Handler.add(plugin)
 end
 
 ---@param loader fun(plugin:MeoPlugin[])
-function Handler.setup(loader)
+Handler.setup = function(loader)
   H.loader = loader
 
   -- Set up module handlers.

@@ -12,7 +12,7 @@ local Utils = {}
 local H = {}
 
 ---@param cb fun()
-function Utils.later(cb)
+Utils.later = function(cb)
   if H.scheduled_later == nil then
     H.scheduled_later = {}
     vim.schedule(H.execute_later)
@@ -24,7 +24,7 @@ end
 ---Display a notification.
 ---@param level 'TRACE'|'DEBUG'|'INFO'|'WARN'|'ERROR'
 ---@param msg string
-function Utils.notify(level, msg)
+Utils.notify = function(level, msg)
   if H.pending_notif == nil and vim.v.vim_did_enter == 0 then
     H.pending_notif = {}
     vim.api.nvim_create_autocmd('UIEnter', {
@@ -49,7 +49,7 @@ end
 ---Display a notification with `string.format`.
 ---@param level 'TRACE'|'DEBUG'|'INFO'|'WARN'|'ERROR'
 ---@param msg string
-function Utils.notifyf(level, msg, ...) Utils.notify(level, string.format(msg, ...)) end
+Utils.notifyf = function(level, msg, ...) Utils.notify(level, string.format(msg, ...)) end
 
 ---Traverses all direct submodules under the given module, including the root
 ---module if it exists.
@@ -57,7 +57,7 @@ function Utils.notifyf(level, msg, ...) Utils.notify(level, string.format(msg, .
 ---It accepts a callback that takes as arguments the name and path of a module.
 ---@param root string
 ---@param cb fun(mod:string,path:string)
-function Utils.scan_submods(root, cb)
+Utils.scan_submods = function(root, cb)
   local rootdir = string.gsub(root, '%.', '/')
   for _, rtp in ipairs(vim.api.nvim_list_runtime_paths()) do
     local dir = rtp .. '/lua/' .. rootdir
@@ -78,7 +78,7 @@ end
 ---@param dir string
 ---@param allow_empty boolean whether to return empty directory modules
 ---@param cb fun(mod:string,path:string)
-function Utils.scan_dirmods(dir, allow_empty, cb)
+Utils.scan_dirmods = function(dir, allow_empty, cb)
   local f = vim.uv.fs_scandir(dir)
   if not f then return end
   while true do
@@ -102,7 +102,7 @@ end
 ---Sets Neovim keymaps using declarative key tables.
 ---@overload fun(specs:MeoKeySpec[])
 ---@overload fun(bufnr:integer,specs:MeoKeySpec[])
-function Utils.keymap(bufnr, specs)
+Utils.keymap = function(bufnr, specs)
   if specs == nil then
     specs = bufnr
     bufnr = nil
@@ -123,7 +123,7 @@ end
 ---Creates Neovim autocmds using declarative tables.
 ---@overload fun(specs:MeoAutocmdSpec[])
 ---@overload fun(group:string,specs:MeoAutocmdSpec[])
-function Utils.autocmd(group, specs)
+Utils.autocmd = function(group, specs)
   if specs == nil then
     specs = group
     group = nil

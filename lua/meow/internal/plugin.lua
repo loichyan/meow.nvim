@@ -39,7 +39,7 @@ local Plugin = {}
 ---@param name string
 ---@param idx integer
 ---@return MeoPlugin
-function Plugin.new(name, idx)
+Plugin.new = function(name, idx)
   return setmetatable({
     name = name,
     priority = 50,
@@ -54,7 +54,7 @@ end
 ---plugin install. Therefore, the caller should perform necessary checks before
 ---asserting the existence of the returned path.
 ---@return string
-function Plugin:path()
+Plugin.path = function(self)
   if not self._path then
     self._path = vim.fs.normalize(vim.fn.stdpath('data') .. '/pack/core/opt/' .. self.name)
   end
@@ -63,32 +63,32 @@ end
 
 ---Returns whether this plugin is loaded.
 ---@return boolean
-function Plugin:is_loaded() return self:_get_state() == PluginState.LOADED end
+Plugin.is_loaded = function(self) return self:_get_state() == PluginState.LOADED end
 
 ---Returns whether this plugin will be loaded.
-function Plugin:will_load() return self:_get_state() < PluginState.IGNORED end
+Plugin.will_load = function(self) return self:_get_state() < PluginState.IGNORED end
 
 ---Returns `shadow == true`.
 ---@return boolean
-function Plugin:is_shadow() return self:_get_cond('shadow', Constants.default_spec_shadow) end
+Plugin.is_shadow = function(self) return self:_get_cond('shadow', Constants.default_spec_shadow) end
 
 ---Returns `enabled == true`.
 ---@return boolean
-function Plugin:is_enabled() return self:_get_cond('enabled', true) end
+Plugin.is_enabled = function(self) return self:_get_cond('enabled', true) end
 
 ---Returns `cond == false`.
 ---@return boolean
-function Plugin:is_ignored() return not self:_get_cond('cond', true) end
+Plugin.is_ignored = function(self) return not self:_get_cond('cond', true) end
 
 ---Returns `lazy == true`.
-function Plugin:is_lazy() return self:_get_cond('lazy', Constants.default_spec_lazy) end
+Plugin.is_lazy = function(self) return self:_get_cond('lazy', Constants.default_spec_lazy) end
 
 ---Resolves the specified conditional field.
 ---@private
 ---@param key 'shadow'|'enabled'|'cond'|'lazy'
 ---@param default MeoSpecCond
 ---@return boolean
-function Plugin:_get_cond(key, default)
+Plugin._get_cond = function(self, key, default)
   local val = self[key]
   if type(val) == 'boolean' then return val end
   if val == nil then val = default end
@@ -100,7 +100,7 @@ end
 ---Infers the state of this plugin.
 ---@private
 ---@return MeoPluginState
-function Plugin:_get_state()
+Plugin._get_state = function(self)
   if self._state then
   elseif not self:is_enabled() then
     self._state = PluginState.DISABLED

@@ -8,7 +8,7 @@ local Meow = {}
 
 local did_setup = false
 ---@param opts MeoOptions?
-function Meow.setup(opts)
+Meow.setup = function(opts)
   if did_setup then return end
   did_setup = true
   opts = opts or {}

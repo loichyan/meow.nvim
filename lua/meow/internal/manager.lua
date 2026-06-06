@@ -20,7 +20,7 @@ H.plugin_map = {}
 ---
 ---CAVEAT: This function may only be called once, after which no modifications
 ---may be made to the instance or any added plugins.
-function Manager.setup()
+Manager.setup = function()
   if H.did_setup then return end
   H.did_setup = true
 
@@ -97,14 +97,14 @@ end
 ---Returns the plugin specified by name.
 ---@param name string
 ---@return MeoPlugin?
-function Manager.get(name) return H.plugin_map[name] end
+Manager.get = function(name) return H.plugin_map[name] end
 
 ---Returns all registered plugins. The returned table MUST NOT be modified.
 ---@return MeoPlugin[]
-function Manager.plugins() return H.plugins end
+Manager.plugins = function() return H.plugins end
 
 ---(debug) Get the internal state for debugging purpose.
-function Manager.debug()
+Manager.debug = function()
   local packinfo_map = {}
   for _, data in ipairs(vim.pack.get()) do
     packinfo_map[data.spec.name] = data
@@ -127,19 +127,19 @@ end
 
 ---Updates the specified plugins the pinned revision.
 ---@param names? string[]
-function Manager.sync(names) Manager.update(names, { target = 'lockfile' }) end
+Manager.sync = function(names) Manager.update(names, { target = 'lockfile' }) end
 
 ---Update plugins. See `:h vim.pack.update`.
 ---@param names? string[]
 ---@param opts? vim.pack.keyset.update
-function Manager.update(names, opts)
+Manager.update = function(names, opts)
   Manager.activate_all()
   vim.pack.update(names, opts)
 end
 
 ---Remove all inactive plugins.
 ---@param opts? vim.pack.keyset.del
-function Manager.clean(opts)
+Manager.clean = function(opts)
   Manager.activate_all()
   local inactive = vim
     .iter(vim.pack.get())
@@ -151,7 +151,7 @@ end
 
 ---Loads a plugin if it is not loaded or disabled.
 ---@param plugin string|MeoPlugin
-function Manager.load(plugin)
+Manager.load = function(plugin)
   -- Resolve the plugin by name.
   if type(plugin) == 'string' then
     local p = Manager.get(plugin)
@@ -169,7 +169,7 @@ end
 ---A module may return a plugin spec or a list of plugin specs.
 ---@param root string
 ---@param opts? {cache_token?:string}
-function Manager.import(root, opts)
+Manager.import = function(root, opts)
   local cache_token = (opts or {}).cache_token or Config.import_cache
   if type(cache_token) == 'function' then cache_token = cache_token() end
   cache_token = cache_token or '' ---@cast cache_token string
@@ -247,7 +247,7 @@ end
 
 ---Adds one or more plugins from the given spec(s).
 ---@param specs MeoSpecImport
-function Manager.add_many(specs)
+Manager.add_many = function(specs)
   if type(specs[1]) ~= 'table' then specs = { specs } end
   ---@cast specs MeoSpec[]
   for _, spec in ipairs(specs) do
@@ -259,7 +259,7 @@ end
 ---instance if a name is specified.
 ---@param spec MeoSpec
 ---@return MeoPlugin?
-function Manager.add(spec)
+Manager.add = function(spec)
   if not spec[1] then
     -- If the spec contains only an import field, resolve the import
     -- immediately; otherwise, defer that until it is installed.
@@ -312,7 +312,7 @@ end
 
 ---Loads all given plugins.
 ---@param plugins MeoPlugin[]
-function Manager.load_many(plugins)
+Manager.load_many = function(plugins)
   local pending_set = {} ---@type table<string,true>
   local pending_list = {} ---@type MeoPlugin[]
   for _, plugin in ipairs(plugins) do
@@ -338,7 +338,7 @@ end
 
 ---Adds all given plugins to vim.pack.
 ---@param plugins MeoPlugin[]
-function Manager.activate_many(plugins)
+Manager.activate_many = function(plugins)
   local pending = {}
   for _, plugin in ipairs(plugins) do
     -- An ignored plugin can still be manually activated.
@@ -366,7 +366,7 @@ end
 
 ---Adds all plugins to vim.pack, mainly used to make vim.pack recognize all
 ---registered lazy-loading plugins before updating or cleaning.
-function Manager.activate_all()
+Manager.activate_all = function()
   if H.activated_all then return end
   H.activated_all = true
   Manager.activate_many(H.plugins)
@@ -374,7 +374,7 @@ end
 
 ---Imports the dependency specs of the given plugin.
 ---@param plugin MeoPlugin
-function H.import_dependencies(plugin)
+H.import_dependencies = function(plugin)
   if plugin.dependencies then
     plugin._deps = plugin._deps or {}
     for _, dep_spec in ipairs(plugin.dependencies) do
@@ -406,7 +406,7 @@ end
 ---appropriate order. It contains the given plugin itself as well.
 ---@param plugin MeoPlugin
 ---@return MeoPlugin[]
-function H.resolve_dependencies(plugin)
+H.resolve_dependencies = function(plugin)
   ---@type MeoPlugin[]
   local deps = {}
   H.collect_dependencies(deps, plugin)
@@ -417,7 +417,7 @@ end
 ---Recursively collects all dependencies of the given plugin using DFS.
 ---@param result MeoPlugin[]
 ---@param plugin MeoPlugin
-function H.collect_dependencies(result, plugin)
+H.collect_dependencies = function(result, plugin)
   -- Skip if resolved, loaded or disabled.
   if plugin._level ~= 0 or plugin:_get_state() >= PluginState.LOADING then return end
 
@@ -449,7 +449,7 @@ end
 
 ---@param plugin MeoPlugin
 ---@param fname string
-function H.plugin_call(plugin, fname)
+H.plugin_call = function(plugin, fname)
   local f = plugin[fname]
   if f == nil then return end
   if not vim.is_callable(f) then
@@ -471,7 +471,7 @@ end
 ---@param a MeoPlugin
 ---@param b MeoPlugin
 ---@return boolean
-function H.plugin_ordering(a, b)
+H.plugin_ordering = function(a, b)
   if a._level ~= b._level then return a._level < b._level end
   if a.priority ~= b.priority then return a.priority > b.priority end
   return a._idx < b._idx
@@ -482,7 +482,7 @@ H.cache_dir = vim.fn.stdpath('cache') .. '/meow'
 ---@param name string
 ---@param token string
 ---@return boolean
-function H.check_cache_token(name, token)
+H.check_cache_token = function(name, token)
   -- Lazy-load cache manifest
   ---@type table<string,string>|{['$version']:number}
   local tokens = H.cache_tokens
@@ -503,7 +503,7 @@ function H.check_cache_token(name, token)
   end
 end
 
-function H.sync_cache_tokens()
+H.sync_cache_tokens = function()
   vim.fn.mkdir(H.cache_dir, 'p')
   local cache_token_path = H.cache_dir .. '/cache'
   local cache_tbl = vim.inspect(H.cache_tokens)
