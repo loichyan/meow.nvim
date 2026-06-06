@@ -1,7 +1,6 @@
 ---@type MeoOptions
 return {
-  patch_mini = false,
-  enable_snapshot = false,
+  concurrency = 10,
   import_cache = nil,
   event_aliases = {},
 }

@@ -1,9 +1,11 @@
 ---@meta _
 
--- TODO: control max number of concurrent jobs
 ---@class MeoOptions
 ---Root spec(s) to load. Imports of other modules are usually specified here.
 ---@field specs? MeoSpecImport
+---Max number of concurrent jobs, defaults to 10. Set it to -1 to unlimit the
+---concurrency.
+---@field concurrency? integer
 ---(deprecated) MiniDeps is no longer supported.
 ---@field patch_mini? nil
 ---(deprecated) Snapshot is always enabled for vim.pack.

@@ -134,7 +134,15 @@ Manager.sync = function(names) Manager.update(names, { target = 'lockfile' }) en
 ---@param opts? vim.pack.keyset.update
 Manager.update = function(names, opts)
   Manager.activate_all()
-  vim.pack.update(names, opts)
+  names = names
+    or vim
+      .iter(vim.pack.get())
+      :filter(function(x) return x.active end)
+      :map(function(x) return x.spec.name end)
+      :totable()
+  for l in H.window_slide(names, Config.concurrency) do
+    vim.pack.update(l, opts)
+  end
 end
 
 ---Remove all inactive plugins.
@@ -161,6 +169,7 @@ Manager.load = function(plugin)
     end
     plugin = p
   end
+  ---@cast plugin MeoPlugin
   Manager.load_many({ plugin })
 end
 
@@ -357,10 +366,13 @@ Manager.activate_many = function(plugins)
     end
   end
 
-  vim.pack.add(pending, { confirm = false })
-  for _, spec in ipairs(pending) do
-    local plugin = spec.data
-    if plugin:_get_state() < PluginState.ACTIVATED then plugin._state = PluginState.ACTIVATED end
+  -- Split pending list into batches to limit concurrency.
+  for l in H.window_slide(pending, Config.concurrency) do
+    vim.pack.add(l, { confirm = false })
+    for _, spec in ipairs(l) do
+      local plugin = spec.data
+      if plugin:_get_state() < PluginState.ACTIVATED then plugin._state = PluginState.ACTIVATED end
+    end
   end
 end
 

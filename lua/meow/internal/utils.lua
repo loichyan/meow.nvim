@@ -157,6 +157,25 @@ Utils.debounce = function(ms, f)
   end
 end
 
+---Iterates over a list with a fixed-size window.
+---@generic T
+---@param list T[]
+---@param size integer
+---@return fun():T[]
+Utils.window_slide = function(list, size)
+  size = size <= 0 and #list or size
+  local i = 1
+  return function()
+    if i > #list then return end
+    local current = {}
+    for j = i, math.min(#list, i + size - 1) do
+      table.insert(current, list[j])
+    end
+    i = i + size
+    return current
+  end
+end
+
 ---Adapted from <https://github.com/nvim-mini/mini.nvim/blob/9d0b9b7188d5c24b5a87f0d8b383ec8bda7a0de4/lua/mini/misc.lua#L378>.
 H.execute_later = function()
   local timer = assert(vim.loop.new_timer())
