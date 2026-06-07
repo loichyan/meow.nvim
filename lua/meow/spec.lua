@@ -23,7 +23,7 @@
 ---@field version? string|vim.VersionRange
 ---Hook function invoked when this plugin gets updated.
 ---@field build? MeoSpecHook
----(deprecated) Use `MeoSpec.src` instead.
+---(deprecated) Use `MeoSpec[1]` instead.
 ---@field source? nil
 ---(deprecated) Use `MeoSpec.version` instead.
 ---@field checkout? nil
@@ -37,7 +37,6 @@
 ---function on the configured events. This is especially useful for setting up
 ---different mini modules independently. By default, any mini plugin (determined
 ---by a name starting with "mini.") automatically becomes a shadow plugin.
----TODO: use a static field
 ---@field shadow? MeoSpecCond
 ---Whether to enable this plugin. The default is `true`. Disabled plugins will
 ---not be added to vim.pack and will therefore be cleaned up.

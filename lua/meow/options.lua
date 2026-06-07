@@ -6,11 +6,13 @@
 ---Max number of concurrent jobs, defaults to 10. Set it to -1 to unlimit the
 ---concurrency.
 ---@field concurrency? integer
----(deprecated) MiniDeps is no longer supported.
----@field patch_mini? nil
----(deprecated) Snapshot is always enabled for vim.pack.
----@field enable_snapshot? nil
 ---The default token for import caches.
 ---@field import_cache? string|(fun():string)
 ---Aliases for event handlers.
 ---@field event_aliases? table<string,string[]>
+---Function used to process each spec before it is added to the plugin registry.
+---@field process_spec? fun(spec:MeoSpec):MeoSpec
+---(deprecated) MiniDeps is no longer supported.
+---@field patch_mini? nil
+---(deprecated) Snapshot is always enabled for vim.pack.
+---@field enable_snapshot? nil

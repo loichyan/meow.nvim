@@ -1,5 +1,4 @@
 local Config = require('meow.internal.config')
-local Constants = require('meow.internal.constants')
 
 ---@class MeoEventHandler
 local Handler = {}
@@ -18,23 +17,16 @@ H.hook_on_changed = {}
 ---@param plugin MeoPlugin
 Handler.add = function(plugin)
   -- Lazy-loading on requiring.
-  if not plugin.module then
+  local module = plugin.module
+  if not module then
     -- Find modules to trigger the loading of the given plugin.
-    if Constants.is_mini(plugin.name) then
-      plugin.module = { plugin.name }
-    else
-      plugin.module = {}
-      if not plugin:is_shadow() then
-        H.scan_dirmods(
-          plugin:path() .. '/lua',
-          true,
-          function(mod) table.insert(plugin.module, mod) end
-        )
-      end
+    module = {}
+    if not plugin:is_shadow() then
+      H.scan_dirmods(plugin:path() .. '/lua', true, function(mod) table.insert(module, mod) end)
     end
   end
-  if plugin.module then
-    for _, mod in ipairs(plugin.module) do
+  if module then
+    for _, mod in ipairs(module) do
       local mods = H.by_module[mod] or {}
       H.by_module[mod] = mods
       table.insert(mods, plugin)

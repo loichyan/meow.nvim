@@ -1,3 +1,4 @@
+local Config = require('meow.internal.config')
 local Utils = require('meow.internal.utils')
 local Manager = require('meow.internal.manager')
 
@@ -18,9 +19,9 @@ Meow.setup = function(opts)
     return
   end
 
+  -- TODO: register user commands
   _G.Meow = Meow
 
-  Meow.config = require('meow.internal.config')
   for k, v in pairs(opts) do
     Meow.config[k] = v
   end
@@ -32,6 +33,9 @@ Meow.setup = function(opts)
     if opts[key] ~= nil then Utils.notifyf('ERROR', '`MeoOptions.%s` is deprecated', key) end
   end
 end
+
+Meow.config = Config
+Meow.default_process_spec = Config.process_spec
 
 -- Methods for Plugin Management -----------------------------------------------
 Meow.add = Manager.add

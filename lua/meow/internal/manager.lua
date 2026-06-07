@@ -294,28 +294,13 @@ Manager.add = function(spec)
     source = 'https://github.com/' .. source
   end
 
+  spec[1], spec.name = source, name
+  spec = Config.process_spec(spec)
+
   -- Register the plugin.
-  local plugin = Plugin.new(name, #H.plugins)
-  plugin.source = source
+  local plugin = Plugin.new(spec, #H.plugins)
   table.insert(H.plugins, plugin)
   H.plugin_map[name] = plugin
-
-  -- Merge the value of each spec key.
-  for key, val in pairs(spec) do
-    local vtype = Constants.SPEC_VTYPES[key]
-    if not vtype then
-      -- Skip user-defined keys.
-    elseif vtype == 'deprecated' then
-      H.notifyf('ERROR', 'spec key "%s" is deprecated for plugin "%s"', key, name)
-    elseif vtype == 'list' then
-      plugin[key] = type(val) ~= 'table' and { val } or val
-    elseif vtype == 'primitive' then
-      plugin[key] = val
-    else
-      error('unreable')
-    end
-  end
-
   return plugin
 end
 
@@ -485,7 +470,7 @@ end
 ---@return boolean
 H.plugin_ordering = function(a, b)
   if a._level ~= b._level then return a._level < b._level end
-  if a.priority ~= b.priority then return a.priority > b.priority end
+  if a._priority ~= b._priority then return a._priority > b._priority end
   return a._idx < b._idx
 end
 
